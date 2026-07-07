@@ -1,0 +1,157 @@
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 960px;
+  margin-inline: auto;
+  padding: var(--space-3);
+  gap: var(--space-3);
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.topbar .back {
+  font-size: 0.9rem;
+}
+
+.hud {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.hud .stat {
+  flex: 1 1 auto;
+  min-width: 90px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.hud .stat .label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.hud .stat .value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+
+.stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  touch-action: none;
+}
+
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background: rgb(18 18 26 / 0.82);
+  text-align: center;
+  padding: var(--space-4);
+}
+
+.overlay[hidden] {
+  display: none;
+}
+
+.overlay h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.overlay p {
+  margin: 0;
+  color: var(--color-text-muted);
+  max-width: 30ch;
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-3);
+}
+
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  transition: background var(--transition);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+button:hover {
+  background: var(--color-accent-hover);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.pedals {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.pedals button {
+  flex: 1;
+  padding: var(--space-4);
+  font-weight: 600;
+}
+
+.pedals button.brake {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.pedals button.brake:hover {
+  border-color: var(--color-accent);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}

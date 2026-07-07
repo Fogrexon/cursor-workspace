@@ -1,0 +1,46 @@
+---
+description: Vite の GitHub Pages 向け設定(base パス・ビルド出力・ローカルライブラリ参照)
+globs: **/vite.config.*
+alwaysApply: false
+---
+
+# Vite / GitHub Pages 設定
+
+GitHub Pages はプロジェクトサイト形式で `https://fogrexon.github.io/cursor-workspace/` に公開される。base パスの設定漏れはアセット 404 の最頻出原因なので必ず設定する。
+
+## vite.config.ts の必須設定
+
+```typescript
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  // リポジトリ名 + アプリ名。末尾スラッシュ必須
+  base: '/cursor-workspace/<app-name>/',
+  build: {
+    // リポジトリルートの docs/<app-name>/ に出力する
+    outDir: '../../docs/<app-name>',
+    emptyOutDir: true,
+  },
+});
+```
+
+## 注意点
+
+- アプリ内のリンク・アセット参照は絶対パス(`/foo.png`)を書かない。`import` 経由か相対パス、または `import.meta.env.BASE_URL` を使う。
+- SPA ルーターを使う場合、ルーターにも base を渡す(例: React Router の `basename={import.meta.env.BASE_URL}`)。可能なら hash ルーティングを選び、Pages の 404 問題を回避する。
+- ビルド後は `docs/<app-name>/index.html` 内のパスが `/cursor-workspace/<app-name>/` で始まっていることを確認する。
+
+## ローカルライブラリの参照
+
+`lib/` のライブラリは npm 公開せず、相対パス(`file:` プロトコル)で参照する。
+
+```json
+{
+  "dependencies": {
+    "@playground/theme": "file:../../lib/theme"
+  }
+}
+```
+
+- `lib/` 側の package.json には `name`(`@playground/` スコープ)、`main` / `exports` を必ず定義する。
+- ライブラリを更新したら、利用側アプリで `npm install` を再実行して反映する。

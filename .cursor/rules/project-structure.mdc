@@ -1,0 +1,30 @@
+---
+description: リポジトリ全体の構成と各アプリ実装時の必須事項
+alwaysApply: true
+---
+
+# プロジェクト構成
+
+このリポジトリは Cursor で実装するアプリの実験場。複数の小さなアプリを GitHub Pages で公開する。
+
+```
+apps/<app-name>/   # 各アプリのソース(Vite プロジェクト)
+lib/<lib-name>/    # 再利用可能なライブラリ(package.json を持つローカルパッケージ)
+docs/              # GitHub Pages の公開ルート(ビルド成果物をコミットする)
+  index.html       # ポータルページ
+  <app-name>/      # 各アプリのビルド出力
+```
+
+## 必須事項
+
+- 新しいアプリは `apps/<app-name>/` に作成する。app-name はケバブケース。
+- ビルドして `docs/<app-name>/` に静的 HTML を出力するところまでが実装エージェントの責務。ビルドせずに終わらない。
+- アプリを追加・改名・削除したら、ポータルページ `docs/index.html` のアプリ一覧カードを必ず更新する。
+- 複数アプリで使い回せるコードは `lib/` に切り出す(詳細は separation-of-concerns ルール)。
+- UI は `lib/theme` のデザイントークンを使いトンマナを揃える(詳細は ui-style スキル)。
+- アプリの新規作成時は create-app スキルのワークフローに従う。
+
+## 禁止事項
+
+- `docs/` 内のビルド成果物を手で編集しない(ポータル `docs/index.html` と `docs/.nojekyll` は手書き管理で例外)。
+- `node_modules/` や中間成果物をコミットしない。

@@ -1,0 +1,64 @@
+/*
+ * cursor-playground 共通デザイントークン
+ * トンマナの詳細は .cursor/skills/ui-style/SKILL.md を参照。
+ * トークンが不足する場合はここに追加する(アプリ側でのハードコード禁止)。
+ */
+
+:root {
+  /* 色: ダーク基調 + インディゴアクセント */
+  --color-bg: #12121a;
+  --color-surface: #1c1c28;
+  --color-surface-hover: #242432;
+  --color-border: #32324a;
+  --color-text: #e8e8f0;
+  --color-text-muted: #9a9ab0;
+  --color-accent: #6c7cff;
+  --color-accent-hover: #8a97ff;
+  --color-accent-text: #ffffff;
+  --color-danger: #ff6b7a;
+  --color-success: #5dd39e;
+
+  /* 余白: 8px グリッド */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+
+  /* 形状 */
+  --radius: 12px;
+  --radius-sm: 6px;
+  --shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  --transition: 150ms ease;
+
+  /* タイポグラフィ */
+  --font-sans: "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --font-mono: "Cascadia Code", Consolas, "SF Mono", monospace;
+
+  color-scheme: dark;
+}
+
+/* 共通ベーススタイル */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@playground/theme",
+  "version": "0.1.0",
+  "private": true,
+  "description": "cursor-playground 全アプリ共通のデザイントークン",
+  "exports": {
+    ".": "./theme.css",
+    "./theme.css": "./theme.css"
+  }
+}

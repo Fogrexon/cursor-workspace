@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { findNetworkPath } from './networkPath';
-import { assignCarTrip, assignTrainTrip, spawnVehicles, updateVehicles } from './vehicles';
+import { assignCarTrip, assignTrainTrip, createTrainOnPath, orderStationsForTour, spawnVehicles, updateVehicles } from './vehicles';
 import { idx, makeTile } from './grid';
 import type { Tile, Vehicle } from '../types';
 
@@ -95,6 +95,56 @@ describe('destination trips', () => {
     expect(v.path[v.path.length - 1]).toEqual({ x: 8, y: 4 });
   });
 
+  it('3駅ある路線では途中駅を飛ばさず次の駅へ向かう', () => {
+    const w = 20;
+    const tiles = roadGrid(w, 8);
+    for (let x = 2; x <= 16; x++) tiles[idx(x, 3, w)] = makeTile('rail');
+    tiles[idx(2, 3, w)] = makeTile('station', 1);
+    tiles[idx(9, 3, w)] = makeTile('station', 1);
+    tiles[idx(16, 3, w)] = makeTile('station', 1);
+    const stations = [
+      { x: 2, y: 3 },
+      { x: 9, y: 3 },
+      { x: 16, y: 3 },
+    ];
+    const rails = [];
+    for (let x = 2; x <= 16; x++) rails.push({ x, y: 3 });
+
+    const tour = orderStationsForTour(stations, tiles, w, 8);
+    expect(tour).toHaveLength(3);
+    // 端→中→端の順（または逆）
+    expect(tour[1]).toEqual({ x: 9, y: 3 });
+
+    const v: Vehicle = {
+      id: 5,
+      kind: 'train',
+      x: 2,
+      y: 3,
+      dir: 0,
+      speed: 2,
+      progress: 0,
+      path: [{ x: 2, y: 3 }],
+      destination: { x: 2, y: 3 },
+      color: 0,
+      cars: 3,
+    };
+    expect(assignTrainTrip(v, tiles, w, 8, stations, rails, () => 0.5)).toBe(true);
+    // 端駅にいるので次は途中駅（一番遠い端ではない）
+    expect(v.destination).toEqual({ x: 9, y: 3 });
+
+    v.x = 9;
+    v.y = 3;
+    expect(assignTrainTrip(v, tiles, w, 8, stations, rails, () => 0.5)).toBe(true);
+    // 中間駅からは進行方向の隣（端駅）
+    expect(v.destination).toEqual({ x: 16, y: 3 });
+
+    v.x = 16;
+    v.y = 3;
+    expect(assignTrainTrip(v, tiles, w, 8, stations, rails, () => 0.5)).toBe(true);
+    // 端で折り返し → 再び途中駅
+    expect(v.destination).toEqual({ x: 9, y: 3 });
+  });
+
   it('都市間の長い線路でも電車が経路を取れる', () => {
     const w = 120;
     const tiles = roadGrid(w, 8);
@@ -138,6 +188,37 @@ describe('destination trips', () => {
     const trains = vehicles.filter((v) => v.kind === 'train');
     expect(trains.length).toBeGreaterThanOrEqual(1);
     expect(trains[0]!.path.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('非連結の路線それぞれに電車が立つ', () => {
+    const w = 40;
+    const tiles = roadGrid(w, 20);
+    // 路線A
+    for (let x = 2; x <= 10; x++) tiles[idx(x, 4, w)] = makeTile('rail');
+    tiles[idx(2, 4, w)] = makeTile('station', 1);
+    tiles[idx(10, 4, w)] = makeTile('station', 1);
+    // 路線B（離れた別ネット）
+    for (let x = 25; x <= 35; x++) tiles[idx(x, 14, w)] = makeTile('rail');
+    tiles[idx(25, 14, w)] = makeTile('station', 1);
+    tiles[idx(35, 14, w)] = makeTile('station', 1);
+
+    const { vehicles } = spawnVehicles(tiles, w, 20, [], 1, 50, 3, 1);
+    const trains = vehicles.filter((v) => v.kind === 'train');
+    expect(trains.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('線路経路を渡すと電車が1台できる', () => {
+    const path = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+    ];
+    const train = createTrainOnPath(path, 10, () => 0.5);
+    expect(train).not.toBeNull();
+    expect(train!.kind).toBe('train');
+    expect(train!.path).toHaveLength(4);
+    expect(train!.destination).toEqual({ x: 3, y: 0 });
   });
 
   it('到着後に次の目的地へ切り替わる', () => {

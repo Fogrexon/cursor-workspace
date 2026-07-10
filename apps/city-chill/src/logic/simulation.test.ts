@@ -60,9 +60,9 @@ describe('grid', () => {
 describe('stats', () => {
   it('初期村は village', () => {
     expect(stageFromPopulation(10)).toBe('village');
-    expect(stageFromPopulation(50)).toBe('town');
-    expect(stageFromPopulation(200)).toBe('city');
-    expect(stageFromPopulation(500)).toBe('metropolis');
+    expect(stageFromPopulation(80)).toBe('town');
+    expect(stageFromPopulation(300)).toBe('city');
+    expect(stageFromPopulation(900)).toBe('metropolis');
   });
 
   it('stageLabel が日本語を返す', () => {
@@ -135,7 +135,7 @@ describe('init + growth', () => {
     });
     expect(countKind(city.tiles, 'road')).toBeGreaterThan(5);
     expect(countKind(city.tiles, 'residential')).toBeGreaterThan(0);
-    expect(city.stats.population).toBe(12);
+    expect(city.stats.population).toBeGreaterThanOrEqual(12);
   });
 
   it('建設でタイルが変わるか予算が減る', () => {

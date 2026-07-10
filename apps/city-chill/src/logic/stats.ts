@@ -1,4 +1,4 @@
-import type { CityStats, GrowthStage, Tile } from '../types';
+import type { CityStats, GrowthStage, SettlementLevel, Tile } from '../types';
 import { DEFAULT_BALANCE, type BalanceConfig } from './balance';
 import { BUILDING_KINDS, countKind } from './grid';
 
@@ -22,19 +22,23 @@ export function recomputeStats(
   let hospitals = 0;
 
   for (const tile of tiles) {
+    // pad はアンカー側で一括計上（二重計上しない）
+    if (tile.kind === 'pad' || tile.footprint === 0) continue;
     const tier = Math.max(1, tile.tier);
+    // 2x2 は土地4マス分なので寄与を増やす（pad はスキップ済み）
+    const fpMult = tile.footprint >= 2 ? 2.5 : 1;
     switch (tile.kind) {
       case 'residential':
         housing += t.residentialHousing * tier;
         break;
       case 'tower':
-        housing += t.towerHousing * tier;
-        jobs += t.towerJobs * tier;
+        housing += t.towerHousing * tier * fpMult;
+        jobs += t.towerJobs * tier * fpMult;
         break;
       case 'skyscraper':
-        housing += t.skyscraperHousing * tier;
-        jobs += t.skyscraperJobs * tier;
-        commerce += t.skyscraperCommerce * tier;
+        housing += t.skyscraperHousing * tier * fpMult;
+        jobs += t.skyscraperJobs * tier * fpMult;
+        commerce += t.skyscraperCommerce * tier * fpMult;
         break;
       case 'commercial':
         jobs += t.commercialJobs * tier;
@@ -100,18 +104,24 @@ export function recomputeStats(
   happiness -= Math.max(0, (h.jobPenaltyBase - jobRatio) * h.jobPenaltyScale);
   happiness = Math.max(h.min, Math.min(h.max, happiness));
 
-  // 予算: 商業・産業・人口から収入、維持費を差し引き（緩やかに黒字寄り）
+  // 予算: 商業・産業・人口から収入、維持費を差し引き
   const income =
     commerce * b.commerceIncome +
     industry * b.industryIncome +
     population * b.populationIncome +
     b.baseIncome;
+  const stationCount = countKind(tiles, 'station');
   const upkeep =
     countKind(tiles, 'road') * b.roadUpkeep +
     countKind(tiles, 'rail') * b.railUpkeep +
     countKind(tiles, 'bridge') * balance.development.bridgeUpkeep +
     countKind(tiles, 'crossing') * b.roadUpkeep * 0.5 +
-    [...BUILDING_KINDS].reduce((s, k) => s + countKind(tiles, k) * b.buildingUpkeep, 0);
+    // 駅は建物維持に加え、追加のインフラ維持
+    stationCount * b.buildingUpkeep * 1.8 +
+    [...BUILDING_KINDS].reduce(
+      (s, k) => s + (k === 'station' ? 0 : countKind(tiles, k) * b.buildingUpkeep),
+      0,
+    );
   const budgetDelta = income - upkeep;
 
   return {
@@ -199,6 +209,7 @@ export interface BuildNeed {
 export function computeBuildNeeds(
   stats: CityStats,
   stage: GrowthStage,
+  settlementLevel: SettlementLevel = stage,
   balance: BalanceConfig = DEFAULT_BALANCE,
 ): BuildNeed {
   const h = balance.happiness;
@@ -210,30 +221,93 @@ export function computeBuildNeeds(
   const happyGap = 60 - stats.happiness;
 
   const need: BuildNeed = {
-    residential: housingGap < 0.15 ? 1.2 - housingGap : 0.1,
-    commercial: jobGap < 0.1 ? 1.0 - jobGap : 0.15,
-    industrial: jobGap < 0 && stage !== 'village' ? 0.9 - jobGap : 0.1,
-    road: transportGap < 0.2 ? 1.3 - transportGap : 0.2,
-    rail: stage === 'city' || stage === 'metropolis' ? (transportGap < 0.4 ? 0.9 : 0.3) : 0.05,
-    school: eduGap > 0 ? eduGap / 40 : 0.05,
-    park: happyGap > 0 ? happyGap / 50 : 0.1,
-    hospital: stage !== 'village' && stats.happiness < 55 ? 0.6 : 0.05,
-    tower: stage === 'city' || stage === 'metropolis' ? (housingGap < 0.2 ? 0.8 : 0.2) : 0,
-    station: stage === 'city' || stage === 'metropolis' ? (transportGap < 0.3 ? 0.7 : 0.15) : 0,
-    skyscraper: stage === 'metropolis' && housingGap < 0.25 ? 0.7 : 0,
+    residential: housingGap < 0.25 ? 1.5 - housingGap : 0.25,
+    commercial: jobGap < 0.2 ? 1.2 - jobGap : 0.25,
+    industrial: jobGap < 0.1 && stage !== 'village' ? 1.0 - jobGap : 0.15,
+    road: transportGap < 0.25 ? 1.2 - transportGap : 0.35,
+    // 鉄道はグローバルネットワーク段階で決める（都市間鉄道は全体施策）
+    rail:
+      stage === 'metropolis'
+        ? transportGap < 0.2
+          ? 0.45
+          : 0.15
+        : stage === 'city'
+          ? transportGap < 0.15
+            ? 0.35
+            : 0.08
+          : 0.02,
+    school: eduGap > 0 ? eduGap / 35 : 0.08,
+    park: happyGap > 0 ? happyGap / 45 : 0.12,
+    hospital: stage !== 'village' && stats.happiness < 55 ? 0.55 : 0.08,
+    // 塔・超高層は街レベルで決める（グローバル stage ではなく局所密度）
+    tower:
+      settlementLevel === 'metropolis'
+        ? housingGap < 0.3
+          ? 0.9
+          : 0.3
+        : settlementLevel === 'city' && pop >= balance.stages.city * 1.1
+          ? housingGap < 0.25
+            ? 0.7
+            : 0.2
+          : 0,
+    station: stage === 'city' || stage === 'metropolis' ? (transportGap < 0.2 ? 0.35 : 0.08) : 0,
+    skyscraper:
+      settlementLevel === 'metropolis' && pop >= balance.stages.metropolis * 1.1
+        ? housingGap < 0.3
+          ? 0.55
+          : 0.15
+        : 0,
   };
+
+  // 余剰予算があるなら建物・拡張に積極投資し、鉄道は抑える
+  if (stats.budget > 120) {
+    const spendBoost = Math.min(2.2, 1 + stats.budget / 400);
+    need.residential *= spendBoost;
+    need.commercial *= spendBoost;
+    need.industrial *= spendBoost * 0.9;
+    need.road *= 1.2;
+    need.tower *= Math.min(spendBoost, 1.4);
+    // 超高層は予算があっても大都会深まるまで抑える
+    if (pop >= balance.stages.metropolis * 1.2) {
+      need.skyscraper *= Math.min(spendBoost, 1.3);
+    } else {
+      need.skyscraper *= 0.4;
+    }
+    need.rail *= 0.45;
+    need.station *= 0.55;
+  }
+  if (stats.budget > 280) {
+    need.residential *= 1.25;
+    need.commercial *= 1.2;
+    need.tower *= 1.15;
+    if (pop >= balance.stages.metropolis * 1.25) {
+      need.skyscraper *= 1.25;
+    }
+    need.rail *= 0.6;
+  }
+  if (stage === 'metropolis') {
+    need.residential *= 1.35;
+    need.commercial *= 1.25;
+    // 塔・超高層ブーストは街レベルで
+    if (settlementLevel === 'metropolis') {
+      need.tower *= 1.2;
+      if (pop >= balance.stages.metropolis * 1.15) {
+        need.skyscraper *= 1.2;
+      }
+    }
+  }
 
   // 借金枠を超えて深く赤字なら大型建設を抑制
   const spendRoom = stats.budget + balance.budget.debtLimit;
   if (spendRoom < 80) {
     need.tower *= 0.1;
-    need.rail *= 0.25;
-    need.station *= 0.2;
+    need.rail *= 0.2;
+    need.station *= 0.15;
     need.skyscraper = 0;
   } else if (stats.budget < 0) {
-    // 借金中でも鉄道・駅は投資として残す（少し抑制）
-    need.tower *= 0.5;
-    need.skyscraper *= 0.3;
+    need.tower *= 0.55;
+    need.skyscraper *= 0.35;
+    need.rail *= 0.7;
   }
 
   return need;

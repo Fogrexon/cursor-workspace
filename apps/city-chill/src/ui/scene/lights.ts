@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export function createLights(scene: THREE.Scene): void {
-  // 昼の空寄り。256 マップでは濃い霧だと全体が沈むので薄くする
+  // 昼の空寄り。広いマップでは濃い霧だと全体が沈むので薄くする
   scene.background = new THREE.Color(0x8eb8d8);
   scene.fog = new THREE.FogExp2(0xa8c8e0, 0.0012);
 

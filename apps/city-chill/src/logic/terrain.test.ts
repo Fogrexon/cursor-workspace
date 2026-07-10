@@ -32,17 +32,14 @@ describe('noise / terrain', () => {
     expect(a.map((t) => t.kind).join()).toBe(b.map((t) => t.kind).join());
   });
 
-  it('初期村の中心は草地/道路で水が無い', () => {
+  it('初期村の中心は道路になる', () => {
     const city = createInitialCity({ width: 64, height: 64, seed: 3, secondsPerDay: 1 });
     expect(city.settlements.length).toBeGreaterThanOrEqual(1);
     for (const s of city.settlements) {
-      for (let dy = -2; dy <= 2; dy++) {
-        for (let dx = -2; dx <= 2; dx++) {
-          const t = city.tiles[(s.cy + dy) * 64 + (s.cx + dx)]!;
-          expect(t.kind).not.toBe('water');
-          expect(t.kind).not.toBe('forest');
-        }
-      }
+      // carveRoadSkeleton の起点(中心)は必ず road になる
+      // 周辺の森・地形は clearVillageCore を削除したため保持されることがある
+      const center = city.tiles[s.cy * 64 + s.cx]!;
+      expect(['road', 'crossing', 'station']).toContain(center.kind);
     }
   });
 

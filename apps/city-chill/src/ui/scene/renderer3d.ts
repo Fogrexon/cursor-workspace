@@ -45,7 +45,7 @@ export function createCityRenderer3D(canvas: HTMLCanvasElement): CityRenderer3D 
 
   let aspect = 1;
   const cam: IsoCameraState = createIsoCamera(aspect);
-  const world: WorldSystem = createWorld(256, 256);
+  const world: WorldSystem = createWorld(128, 128);
   scene.add(world.root);
 
   let cssW = 1;

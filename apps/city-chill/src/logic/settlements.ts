@@ -1,4 +1,5 @@
-import type { Settlement, Tile, TileKind } from '../types';
+import type { Settlement, SettlementLevel, Tile, TileKind } from '../types';
+import { mergeFacing } from './connections';
 import { BUILDING_KINDS, getTile, idx, inBounds, makeTile, neighbors4, ROAD_LIKE } from './grid';
 import { chance, pickInt } from './rng';
 
@@ -33,6 +34,31 @@ const DEVELOPED: ReadonlySet<TileKind> = new Set([
   'station',
 ]);
 
+/**
+ * 周辺の開発タイル数（settlementDevelopment の結果）から、その街の都会度を返す。
+ * グローバルの stage（全体人口ベース）とは独立して街ごとに算出する。
+ */
+export function settlementLevelFromDevelopment(devCount: number): SettlementLevel {
+  if (devCount < 18) return 'hamlet';
+  if (devCount < 55) return 'village';
+  if (devCount < 130) return 'town';
+  if (devCount < 280) return 'city';
+  return 'metropolis';
+}
+
+/** 初期集落の成長段階（ほぼ空〜中規模町） */
+export type SeedMaturity = 'hamlet' | 'village' | 'borough' | 'town';
+
+/** SeedMaturity から初期 SettlementLevel へのマッピング */
+function seedMaturityToLevel(maturity: SeedMaturity): SettlementLevel {
+  switch (maturity) {
+    case 'hamlet': return 'hamlet';
+    case 'village': return 'village';
+    case 'borough': return 'village';
+    case 'town': return 'town';
+  }
+}
+
 function pickTownName(rng: Rng, used: Set<string>): string {
   const free = TOWN_NAMES.filter((n) => !used.has(n));
   const pool = free.length > 0 ? free : [...TOWN_NAMES];
@@ -54,38 +80,351 @@ function carveRoad(
   while (x !== x1 || y !== y1) {
     const t = tiles[idx(x, y, width)]!;
     if (t.kind !== 'water') {
-      tiles[idx(x, y, width)] = makeTile('road');
+      const axis = x !== x1 ? 'x' : 'z';
+      const facing =
+        t.kind === 'road' || t.kind === 'crossing' || t.kind === 'bridge'
+          ? mergeFacing(t.facing, axis)
+          : axis;
+      tiles[idx(x, y, width)] = makeTile('road', 0, 0, 0, facing);
     }
     if (x !== x1) x += x < x1 ? 1 : -1;
     else if (y !== y1) y += y < y1 ? 1 : -1;
   }
   const end = tiles[idx(x1, y1, width)]!;
   if (end.kind !== 'water') {
-    tiles[idx(x1, y1, width)] = makeTile('road');
+    const axis = x0 !== x1 ? 'x' : 'z';
+    const facing =
+      end.kind === 'road' || end.kind === 'crossing' || end.kind === 'bridge'
+        ? mergeFacing(end.facing, axis)
+        : axis;
+    tiles[idx(x1, y1, width)] = makeTile('road', 0, 0, 0, facing);
   }
 }
 
-function clearVillageCore(
+
+/** 道路骨格の形 */
+type RoadShape = 'cross' | 'tee' | 'ell' | 'strip' | 'branch' | 'loop';
+
+function pickSeedMaturity(rng: Rng, index: number, total: number): SeedMaturity {
+  // マップに複数あるときは規模をばらけさせる
+  if (total >= 3) {
+    if (index === 0) return chance(rng, 0.55) ? 'borough' : 'town';
+    if (index === 1) return chance(rng, 0.6) ? 'hamlet' : 'village';
+  }
+  const roll = rng();
+  if (roll < 0.22) return 'hamlet';
+  if (roll < 0.55) return 'village';
+  if (roll < 0.82) return 'borough';
+  return 'town';
+}
+
+function pickRoadShape(rng: Rng, maturity: SeedMaturity): RoadShape {
+  if (maturity === 'hamlet') {
+    const r = rng();
+    if (r < 0.35) return 'ell';
+    if (r < 0.65) return 'strip';
+    if (r < 0.85) return 'tee';
+    return 'cross';
+  }
+  if (maturity === 'village') {
+    const r = rng();
+    if (r < 0.25) return 'cross';
+    if (r < 0.45) return 'tee';
+    if (r < 0.65) return 'ell';
+    if (r < 0.85) return 'branch';
+    return 'strip';
+  }
+  if (maturity === 'borough') {
+    const r = rng();
+    if (r < 0.2) return 'cross';
+    if (r < 0.4) return 'branch';
+    if (r < 0.6) return 'loop';
+    if (r < 0.8) return 'tee';
+    return 'ell';
+  }
+  const r = rng();
+  if (r < 0.25) return 'loop';
+  if (r < 0.5) return 'branch';
+  if (r < 0.7) return 'cross';
+  if (r < 0.85) return 'tee';
+  return 'ell';
+}
+
+function placeBuildingSafe(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+  kind: Tile['kind'],
+  tier: number,
+  rng: Rng,
+): void {
+  if (x <= 0 || y <= 0 || x >= width - 1 || y >= height - 1) return;
+  const t = tiles[idx(x, y, width)]!;
+  if (t.kind === 'water' || t.kind === 'road' || t.kind === 'crossing' || t.kind === 'bridge') {
+    return;
+  }
+  tiles[idx(x, y, width)] = makeTile(kind, tier, pickInt(rng, 0, 3));
+}
+
+/** 中心からランダム長の腕を伸ばす（非対称クロス用） */
+function carveArm(
+  tiles: Tile[],
+  width: number,
+  cx: number,
+  cy: number,
+  dx: number,
+  dy: number,
+  len: number,
+): void {
+  if (len <= 0) return;
+  carveRoad(tiles, width, cx, cy, cx + dx * len, cy + dy * len);
+}
+
+function carveRoadSkeleton(
   tiles: Tile[],
   width: number,
   height: number,
   cx: number,
   cy: number,
   rng: Rng,
+  maturity: SeedMaturity,
 ): void {
-  for (let dy = -3; dy <= 3; dy++) {
-    for (let dx = -4; dx <= 4; dx++) {
-      const x = cx + dx;
-      const y = cy + dy;
+  const shape = pickRoadShape(rng, maturity);
+  const scale =
+    maturity === 'hamlet' ? 1 : maturity === 'village' ? 2 : maturity === 'borough' ? 3 : 4;
+  // 東西・南北の伸びをばらけさせる
+  const stretchX = scale + pickInt(rng, 0, 2) + (chance(rng, 0.4) ? 1 : 0);
+  const stretchY = scale + pickInt(rng, 0, 2) + (chance(rng, 0.4) ? 1 : 0);
+  const flip = chance(rng, 0.5);
+
+  const armE = stretchX - pickInt(rng, 0, Math.min(2, stretchX - 1));
+  const armW = stretchX - pickInt(rng, 0, Math.min(2, stretchX - 1));
+  const armN = stretchY - pickInt(rng, 0, Math.min(2, stretchY - 1));
+  const armS = stretchY - pickInt(rng, 0, Math.min(2, stretchY - 1));
+
+  if (shape === 'strip') {
+    if (flip) carveRoad(tiles, width, cx - armW, cy, cx + armE, cy);
+    else carveRoad(tiles, width, cx, cy - armN, cx, cy + armS);
+    // たまに短い枝
+    if (chance(rng, 0.55)) {
+      const spur = pickInt(rng, 1, Math.max(1, scale));
+      const along = pickInt(rng, -Math.min(armW, armE), Math.min(armW, armE));
+      if (flip) carveArm(tiles, width, cx + along, cy, 0, chance(rng, 0.5) ? 1 : -1, spur);
+      else carveArm(tiles, width, cx, cy + along, chance(rng, 0.5) ? 1 : -1, 0, spur);
+    }
+    return;
+  }
+
+  if (shape === 'ell') {
+    // L字: 2方向だけ（向きランダム）
+    const dirs: Array<[number, number, number]> = [
+      [1, 0, armE],
+      [-1, 0, armW],
+      [0, 1, armS],
+      [0, -1, armN],
+    ];
+    // シャッフルして2本
+    for (let i = dirs.length - 1; i > 0; i--) {
+      const j = pickInt(rng, 0, i);
+      const tmp = dirs[i]!;
+      dirs[i] = dirs[j]!;
+      dirs[j] = tmp;
+    }
+    carveArm(tiles, width, cx, cy, dirs[0]![0], dirs[0]![1], dirs[0]![2]);
+    carveArm(tiles, width, cx, cy, dirs[1]![0], dirs[1]![1], dirs[1]![2]);
+    return;
+  }
+
+  if (shape === 'tee') {
+    // T字: 幹線 + 片側の枝
+    if (flip) {
+      carveRoad(tiles, width, cx - armW, cy, cx + armE, cy);
+      carveArm(tiles, width, cx, cy, 0, chance(rng, 0.5) ? 1 : -1, Math.max(armN, armS));
+    } else {
+      carveRoad(tiles, width, cx, cy - armN, cx, cy + armS);
+      carveArm(tiles, width, cx, cy, chance(rng, 0.5) ? 1 : -1, 0, Math.max(armE, armW));
+    }
+    return;
+  }
+
+  if (shape === 'cross') {
+    carveArm(tiles, width, cx, cy, 1, 0, armE);
+    carveArm(tiles, width, cx, cy, -1, 0, armW);
+    carveArm(tiles, width, cx, cy, 0, 1, armS);
+    carveArm(tiles, width, cx, cy, 0, -1, armN);
+    return;
+  }
+
+  if (shape === 'branch') {
+    // 幹線 + ランダムな位置から枝
+    if (flip) {
+      carveRoad(tiles, width, cx - armW, cy, cx + armE, cy);
+      const branches = 1 + pickInt(rng, 0, maturity === 'town' ? 3 : 2);
+      for (let i = 0; i < branches; i++) {
+        const along = pickInt(rng, -armW, armE);
+        const len = pickInt(rng, 1, stretchY);
+        carveArm(tiles, width, cx + along, cy, 0, chance(rng, 0.5) ? 1 : -1, len);
+      }
+    } else {
+      carveRoad(tiles, width, cx, cy - armN, cx, cy + armS);
+      const branches = 1 + pickInt(rng, 0, maturity === 'town' ? 3 : 2);
+      for (let i = 0; i < branches; i++) {
+        const along = pickInt(rng, -armN, armS);
+        const len = pickInt(rng, 1, stretchX);
+        carveArm(tiles, width, cx, cy + along, chance(rng, 0.5) ? 1 : -1, 0, len);
+      }
+    }
+    // たまに短い平行路
+    if (maturity !== 'hamlet' && chance(rng, 0.4)) {
+      const off = pickInt(rng, 2, Math.max(2, scale + 1)) * (chance(rng, 0.5) ? 1 : -1);
+      if (flip) {
+        const y2 = cy + off;
+        if (y2 > 0 && y2 < height - 1) {
+          carveRoad(
+            tiles,
+            width,
+            cx - pickInt(rng, 1, armW),
+            y2,
+            cx + pickInt(rng, 1, armE),
+            y2,
+          );
+        }
+      } else {
+        const x2 = cx + off;
+        if (x2 > 0 && x2 < width - 1) {
+          carveRoad(
+            tiles,
+            width,
+            x2,
+            cy - pickInt(rng, 1, armN),
+            x2,
+            cy + pickInt(rng, 1, armS),
+          );
+        }
+      }
+    }
+    return;
+  }
+
+  // loop: いびつな四角（辺の長さをばらけさせ、たまに1辺欠ける）
+  const left = armW;
+  const right = armE;
+  const top = armN;
+  const bottom = armS;
+  const skip = chance(rng, 0.35) ? pickInt(rng, 0, 3) : -1;
+  if (skip !== 0) carveRoad(tiles, width, cx - left, cy - top, cx + right, cy - top);
+  if (skip !== 1) carveRoad(tiles, width, cx - left, cy + bottom, cx + right, cy + bottom);
+  if (skip !== 2) carveRoad(tiles, width, cx - left, cy - top, cx - left, cy + bottom);
+  if (skip !== 3) carveRoad(tiles, width, cx + right, cy - top, cx + right, cy + bottom);
+  // 内部の十字や斜め接続
+  if (chance(rng, 0.7)) {
+    carveRoad(tiles, width, cx - pickInt(rng, 0, left), cy, cx + pickInt(rng, 0, right), cy);
+  }
+  if (chance(rng, 0.55)) {
+    carveRoad(tiles, width, cx, cy - pickInt(rng, 0, top), cx, cy + pickInt(rng, 0, bottom));
+  }
+}
+
+function pickBuildingKind(
+  rng: Rng,
+  maturity: SeedMaturity,
+  index: number,
+): { kind: Tile['kind']; tier: number } {
+  const roll = rng();
+  if (maturity === 'hamlet') {
+    if (roll < 0.75) return { kind: 'residential', tier: 1 };
+    return { kind: 'park', tier: 1 };
+  }
+  if (maturity === 'village') {
+    if (roll < 0.55) return { kind: 'residential', tier: 1 };
+    if (roll < 0.75) return { kind: 'commercial', tier: 1 };
+    if (roll < 0.9) return { kind: 'park', tier: 1 };
+    return { kind: 'industrial', tier: 1 };
+  }
+  if (maturity === 'borough') {
+    if (index === 0 && chance(rng, 0.45)) return { kind: 'school', tier: 1 };
+    if (roll < 0.45) return { kind: 'residential', tier: chance(rng, 0.35) ? 2 : 1 };
+    if (roll < 0.65) return { kind: 'commercial', tier: 1 };
+    if (roll < 0.78) return { kind: 'industrial', tier: 1 };
+    if (roll < 0.9) return { kind: 'park', tier: 1 };
+    return { kind: 'plaza', tier: 1 };
+  }
+  // town
+  if (index === 0 && chance(rng, 0.55)) return { kind: 'school', tier: 1 };
+  if (index === 1 && chance(rng, 0.4)) return { kind: 'hospital', tier: 1 };
+  if (roll < 0.4) return { kind: 'residential', tier: chance(rng, 0.5) ? 2 : 1 };
+  if (roll < 0.58) return { kind: 'commercial', tier: chance(rng, 0.4) ? 2 : 1 };
+  if (roll < 0.72) return { kind: 'industrial', tier: 1 };
+  if (roll < 0.84) return { kind: 'park', tier: 1 };
+  if (roll < 0.92) return { kind: 'plaza', tier: 1 };
+  return { kind: 'residential', tier: 1 };
+}
+
+/** 道路に面した空き地へ建物をばらまく */
+function scatterBuildingsAlongRoads(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  cx: number,
+  cy: number,
+  rng: Rng,
+  maturity: SeedMaturity,
+  scanR: number,
+): void {
+  const target =
+    maturity === 'hamlet'
+      ? pickInt(rng, 1, 3)
+      : maturity === 'village'
+        ? pickInt(rng, 4, 7)
+        : maturity === 'borough'
+          ? pickInt(rng, 8, 14)
+          : pickInt(rng, 14, 24);
+
+  const candidates: Array<{ x: number; y: number; score: number }> = [];
+  for (let y = cy - scanR; y <= cy + scanR; y++) {
+    for (let x = cx - scanR; x <= cx + scanR; x++) {
       if (x <= 0 || y <= 0 || x >= width - 1 || y >= height - 1) continue;
       const t = tiles[idx(x, y, width)]!;
-      if (t.kind === 'water' || t.kind === 'forest') {
-        tiles[idx(x, y, width)] = makeTile('grass', 0, pickInt(rng, 0, 3));
+      if (t.kind !== 'grass' && t.kind !== 'empty' && t.kind !== 'forest') continue;
+      if (!neighbors4(x, y, width, height).some((n) => ROAD_LIKE.has(tiles[idx(n.x, n.y, width)]!.kind))) {
+        continue;
       }
+      const dist = Math.hypot(x - cx, y - cy);
+      // 中心寄りをやや優先しつつ乱数で混ぜる
+      candidates.push({ x, y, score: 3 - dist * 0.15 + rng() * 2.5 });
+    }
+  }
+  candidates.sort((a, b) => b.score - a.score);
+
+  const used = new Set<string>();
+  let placed = 0;
+  const pool = candidates.slice(0, Math.min(candidates.length, target * 3 + 8));
+  // 上位からランダムに間引きながら置く
+  while (placed < target && pool.length > 0) {
+    const i = pickInt(rng, 0, Math.min(pool.length - 1, Math.max(2, Math.floor(pool.length * 0.4))));
+    const c = pool.splice(i, 1)[0]!;
+    const key = `${c.x},${c.y}`;
+    if (used.has(key)) continue;
+    // 隣が既に建物なら少し避ける（塊になりすぎ防止、ただし完全禁止ではない）
+    const crowded = neighbors4(c.x, c.y, width, height).filter((n) =>
+      BUILDING_KINDS.has(tiles[idx(n.x, n.y, width)]!.kind),
+    ).length;
+    if (crowded >= 3 && chance(rng, 0.7)) continue;
+    const { kind, tier } = pickBuildingKind(rng, maturity, placed);
+    placeBuildingSafe(tiles, width, height, c.x, c.y, kind, tier, rng);
+    if (BUILDING_KINDS.has(tiles[idx(c.x, c.y, width)]!.kind)) {
+      used.add(key);
+      placed += 1;
     }
   }
 }
 
+/**
+ * 集落の初期レイアウト。
+ * 道路骨格をランダムに選び、建物は道路沿いにばらまく。
+ */
 function placeStarterBuildings(
   tiles: Tile[],
   width: number,
@@ -93,29 +432,30 @@ function placeStarterBuildings(
   cx: number,
   cy: number,
   rng: Rng,
-): void {
-  carveRoad(tiles, width, cx - 3, cy, cx + 3, cy);
-  carveRoad(tiles, width, cx, cy - 2, cx, cy + 2);
-
-  const starters: Array<{ dx: number; dy: number; kind: Tile['kind']; tier: number }> = [
-    { dx: -1, dy: -1, kind: 'residential', tier: 1 },
-    { dx: 1, dy: -1, kind: 'residential', tier: 1 },
-    { dx: -1, dy: 1, kind: 'residential', tier: 1 },
-    { dx: 1, dy: 1, kind: 'commercial', tier: 1 },
-    { dx: 2, dy: -1, kind: 'park', tier: 1 },
-  ];
-  for (const s of starters) {
-    const x = cx + s.dx;
-    const y = cy + s.dy;
-    if (x > 0 && y > 0 && x < width - 1 && y < height - 1) {
-      tiles[idx(x, y, width)] = makeTile(s.kind, s.tier, pickInt(rng, 0, 2));
+  maturity: SeedMaturity,
+): number {
+  carveRoadSkeleton(tiles, width, height, cx, cy, rng, maturity);
+  const scanR =
+    maturity === 'hamlet' ? 3 : maturity === 'village' ? 5 : maturity === 'borough' ? 7 : 9;
+  // loop 形状など一部のケースで中心タイルが道路に含まれないことがある。
+  // 村の核として ±2 タイルは必ず非森地にする。
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (!inBounds(nx, ny, width, height)) continue;
+      const t = tiles[idx(nx, ny, width)]!;
+      if (t.kind === 'forest') tiles[idx(nx, ny, width)] = makeTile('grass');
     }
   }
+  scatterBuildingsAlongRoads(tiles, width, height, cx, cy, rng, maturity, scanR);
+  return scanR + 4;
 }
 
 /**
  * マップ上に複数の小さな村を配置する。
- * 大きいマップほど集落数を増やす。
+ * 大きいマップほど集落数を増やす（都市間が遠すぎない密度にする）。
+ * 各集落は hamlet〜town まで成長段階がばらつく。
  */
 export function seedSettlements(
   tiles: Tile[],
@@ -124,26 +464,41 @@ export function seedSettlements(
   rng: Rng,
 ): Settlement[] {
   const area = width * height;
+  // 128² では 5〜8、それ以上の巨大マップでは 8〜12
   const count =
-    area >= 200 * 200 ? pickInt(rng, 4, 6) : area >= 80 * 80 ? pickInt(rng, 3, 4) : 1;
+    area >= 200 * 200
+      ? pickInt(rng, 8, 12)
+      : area >= 100 * 100
+        ? pickInt(rng, 5, 8)
+        : area >= 80 * 80
+          ? pickInt(rng, 3, 5)
+          : 1;
 
-  const minDist = Math.max(28, Math.floor(Math.min(width, height) * 0.22));
+  // 密集しすぎず、かつ目標数を置ける最短距離
+  const minDist = Math.max(
+    22,
+    Math.floor(
+      Math.min(width, height) *
+        (area >= 200 * 200 ? 0.13 : area >= 100 * 100 ? 0.16 : 0.22),
+    ),
+  );
   const margin = Math.max(12, Math.floor(Math.min(width, height) * 0.08));
   const settlements: Settlement[] = [];
   const usedNames = new Set<string>();
 
-  const tryPlace = (cx: number, cy: number, id: number): boolean => {
+  const tryPlace = (cx: number, cy: number, id: number, dist: number): boolean => {
     for (const s of settlements) {
-      if (Math.hypot(cx - s.cx, cy - s.cy) < minDist) return false;
+      if (Math.hypot(cx - s.cx, cy - s.cy) < dist) return false;
     }
-    clearVillageCore(tiles, width, height, cx, cy, rng);
-    placeStarterBuildings(tiles, width, height, cx, cy, rng);
+    const maturity = pickSeedMaturity(rng, settlements.length, count);
+    const radius = placeStarterBuildings(tiles, width, height, cx, cy, rng, maturity);
     settlements.push({
       id,
       name: pickTownName(rng, usedNames),
       cx,
       cy,
-      radius: 10,
+      radius,
+      level: seedMaturityToLevel(maturity),
     });
     return true;
   };
@@ -155,20 +510,26 @@ export function seedSettlements(
     Math.max(margin, Math.min(width - margin - 1, midX)),
     Math.max(margin, Math.min(height - margin - 1, midY)),
     0,
+    minDist,
   );
 
   let guard = 0;
-  while (settlements.length < count && guard++ < 80) {
+  let dist = minDist;
+  while (settlements.length < count && guard++ < 240) {
     const cx = pickInt(rng, margin, width - margin - 1);
     const cy = pickInt(rng, margin, height - margin - 1);
-    tryPlace(cx, cy, settlements.length);
+    if (tryPlace(cx, cy, settlements.length, dist)) continue;
+    // 置ききれないときは少し距離を緩める
+    if (guard > 120 && settlements.length < count * 0.7) {
+      dist = Math.max(24, Math.floor(dist * 0.92));
+    }
   }
 
   // 最低2集落（広いマップ）
   if (count >= 3 && settlements.length < 2) {
     const cx = Math.max(margin, width - margin - 20);
     const cy = Math.max(margin, height - margin - 20);
-    tryPlace(cx, cy, settlements.length);
+    tryPlace(cx, cy, settlements.length, 24);
   }
 
   return settlements;
@@ -218,7 +579,7 @@ export function pickSettlement(
   return settlements[settlements.length - 1]!;
 }
 
-/** 集落中心を開発の重心へゆっくり追従し、半径を更新 */
+/** 集落中心を建物の重心へゆっくり追従し、半径を更新（線路・駅だけでは引っ張らない） */
 export function refreshSettlementCenters(
   settlements: Settlement[],
   tiles: Tile[],
@@ -235,17 +596,21 @@ export function refreshSettlementCenters(
         if (!inBounds(x, y, width, height)) continue;
         if (Math.hypot(x - s.cx, y - s.cy) > r) continue;
         const t = tiles[idx(x, y, width)]!;
-        if (!DEVELOPED.has(t.kind)) continue;
+        // 道路・線路・空駅では町を広げない。建物のみ
+        if (!BUILDING_KINDS.has(t.kind) || t.kind === 'station') continue;
         sx += x;
         sy += y;
         n += 1;
       }
     }
-    if (n > 8) {
+    if (n > 6) {
       s.cx = Math.round(s.cx * 0.7 + (sx / n) * 0.3);
       s.cy = Math.round(s.cy * 0.7 + (sy / n) * 0.3);
-      s.radius = Math.min(48, Math.max(10, Math.sqrt(n) * 1.1));
+      s.radius = Math.min(48, Math.max(10, Math.sqrt(n) * 1.25));
     }
+    // 開発タイル数から街レベルを更新（グローバル stage と独立）
+    const dev = settlementDevelopment(tiles, width, height, s);
+    s.level = settlementLevelFromDevelopment(dev);
   }
 }
 
@@ -357,7 +722,30 @@ export function isStationSite(kind: TileKind): boolean {
   return kind === 'grass' || kind === 'empty' || kind === 'forest' || kind === 'rail';
 }
 
-/** 集落付近の駅用地（道路の隣の空き地を優先。道路マス自体は使わない） */
+/** 近傍建物数（駅以外）。growth の密集判定と同趣旨 */
+function countBuildingsNearLocal(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius = 4,
+): number {
+  let n = 0;
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!inBounds(nx, ny, width, height)) continue;
+      const k = tiles[idx(nx, ny, width)]!.kind;
+      if (k === 'station') continue;
+      if (BUILDING_KINDS.has(k)) n += 1;
+    }
+  }
+  return n;
+}
+
+/** 集落付近の駅用地（密集地のみ。道路マス自体は使わない） */
 export function findStationSiteNear(
   tiles: Tile[],
   width: number,
@@ -376,15 +764,25 @@ export function findStationSiteNear(
       if (!inBounds(x, y, width, height)) continue;
       const t = tiles[idx(x, y, width)]!;
       if (!isStationSite(t.kind)) continue;
-      // 道路そのものは駅にしない
       if (t.kind === 'road' || t.kind === 'crossing' || t.kind === 'bridge') continue;
+      const density = countBuildingsNearLocal(tiles, x, y, width, height);
+      if (density < 3) continue;
+      let tooClose = false;
+      for (let sy = y - 8; sy <= y + 8 && !tooClose; sy++) {
+        for (let sx = x - 8; sx <= x + 8; sx++) {
+          if (!inBounds(sx, sy, width, height)) continue;
+          if (tiles[idx(sx, sy, width)]!.kind !== 'station') continue;
+          if (Math.hypot(sx - x, sy - y) < 8) tooClose = true;
+        }
+      }
+      if (tooClose) continue;
       const nearRoad = neighbors4(x, y, width, height).some((n) =>
         ROAD_LIKE.has(tiles[idx(n.x, n.y, width)]!.kind),
       );
       const dist = Math.hypot(x - cx, y - cy);
-      let score = 10 - dist * 0.4;
-      if (nearRoad) score += 5;
-      if (t.kind === 'rail') score += 3;
+      let score = density * 2 + 8 - dist * 0.4;
+      if (nearRoad) score += 4;
+      if (t.kind === 'rail') score += 5;
       if (t.kind === 'forest') score -= 1;
       if (!best || score > best.score) best = { x, y, score };
     }
@@ -509,8 +907,8 @@ export function shouldTryIntercityRail(
   rng: Rng,
 ): boolean {
   if (settlements.length < 2) return false;
-  if (stage === 'village') return false;
-  // town 以降で徐々に都市間鉄道を狙う
-  const p = stage === 'town' ? 0.18 : stage === 'city' ? 0.35 : 0.45;
+  // 町段階では都市間を引かない。都市以降も控えめ
+  if (stage === 'village' || stage === 'town') return false;
+  const p = stage === 'city' ? 0.05 : 0.16;
   return chance(rng, p);
 }

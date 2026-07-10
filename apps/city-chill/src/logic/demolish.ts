@@ -27,6 +27,9 @@ const DEMOLISHABLE_KINDS: ReadonlySet<TileKind> = new Set(
 export function isDemolishable(tile: Tile): boolean {
   // ホワイトリスト: 建物以外（rail / crossing / station 含む）は壊さない
   if (!DEMOLISHABLE_KINDS.has(tile.kind)) return false;
+  if (tile.kind === 'pad' || tile.footprint === 0) return false;
+  // 2x2 高層は壊さない
+  if (tile.footprint >= 2) return false;
   if (tile.construction > 0) return false;
   const base = DEMOLISH_BASE[tile.kind];
   if (base == null) return false;
@@ -264,6 +267,11 @@ export function isLastEscapeForBuilding(
   for (const n of neighbors4(x, y, width, height)) {
     const nt = tiles[n.y * width + n.x]!;
     if (!ROAD_LIKE.has(nt.kind)) continue;
+    // 道路ネットワークに 2 本以上繋がっていれば封鎖しても問題なし
+    const roadConns = neighbors4(n.x, n.y, width, height).filter(
+      (b) => ROAD_LIKE.has(tiles[b.y * width + b.x]!.kind),
+    ).length;
+    if (roadConns >= 2) continue;
     const escapes = neighbors4(n.x, n.y, width, height).filter((b) => {
       const bt = tiles[b.y * width + b.x]!;
       return (

@@ -17,10 +17,22 @@ export type TileKind =
   | 'station'
   | 'plaza'
   | 'tower'
-  | 'skyscraper';
+  | 'skyscraper'
+  /** 2x2 などマルチタイル建物の占有マス（描画・統計はアンカーのみ） */
+  | 'pad';
 
 /** 建物の発展段階 (見た目の高さ・密度に影響) */
 export type BuildingTier = 1 | 2 | 3 | 4 | 5;
+
+/**
+ * 道路・線路の主向き。
+ * 並走する線路が直交接続に見えないよう、接続判定に使う。
+ * - x: 東西
+ * - z: 南北
+ * - both: L/T/十字など分岐・交差
+ * - none: 未設定（草地など）
+ */
+export type TileFacing = 'none' | 'x' | 'z' | 'both';
 
 export interface Tile {
   kind: TileKind;
@@ -30,6 +42,19 @@ export interface Tile {
   construction: number;
   /** 見た目のバリエーション */
   variant: number;
+  /** 道路・線路の向き（並走と分岐の区別用） */
+  facing: TileFacing;
+  /**
+   * フットプリント辺長。
+   * - 通常建物・インフラ: 1
+   * - 2x2 高層のアンカー: 2
+   * - pad（占有マス）: 0
+   */
+  footprint: number;
+  /**
+   * pad のときアンカーの線形 index。それ以外は -1。
+   */
+  anchorIdx: number;
 }
 
 /** 都市の裏パラメーター */
@@ -57,6 +82,19 @@ export interface CityStats {
 }
 
 export type GrowthStage = 'village' | 'town' | 'city' | 'metropolis';
+
+/**
+ * マップ全体のネットワーク段階。全体人口から計算し、都市間鉄道・予算施策など
+ * マップ横断の判断にのみ使う。個々の街の都会度には SettlementLevel を使うこと。
+ */
+export type NetworkPhase = GrowthStage;
+
+/**
+ * 個々の街（settlement）の都会度。
+ * 街の周辺建物密度から計算し、地価・超高層・塔の建設可否判定に使う。
+ * グローバルの NetworkPhase とは独立して管理する。
+ */
+export type SettlementLevel = 'hamlet' | 'village' | 'town' | 'city' | 'metropolis';
 
 export type VehicleKind = 'car' | 'bus' | 'truck' | 'train';
 
@@ -90,6 +128,8 @@ export interface Vehicle {
   carPoses?: PathPose[];
   /** 目的地到着後の待機残り秒 (駅停車など) */
   wait?: number;
+  /** 電車の駅巡回方向 (+1 / -1)。端で折り返す */
+  railDir?: 1 | -1;
 }
 
 export interface Settlement {
@@ -100,6 +140,11 @@ export interface Settlement {
   cy: number;
   /** 影響半径（発展に応じて広がる） */
   radius: number;
+  /**
+   * 街の都会度。周辺の建物密度から計算。
+   * 地価・超高層・塔の建設可否判定に使う（グローバル stage とは独立）。
+   */
+  level: SettlementLevel;
 }
 
 export interface CityState {
@@ -108,6 +153,11 @@ export interface CityState {
   tiles: Tile[];
   stats: CityStats;
   vehicles: Vehicle[];
+  /**
+   * マップ全体のネットワーク段階（全体人口から計算）。
+   * 都市間鉄道・予算施策などマップ横断の判断にのみ使う。
+   * 個々の街の都会度は settlements[i].level を参照すること。
+   */
   stage: GrowthStage;
   /** 次に建設する候補のクールダウン */
   buildCooldown: number;

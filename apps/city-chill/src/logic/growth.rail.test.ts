@@ -23,6 +23,27 @@ function grassGrid(w: number, h: number): Tile[] {
   return Array.from({ length: w * h }, () => makeTile('grass'));
 }
 
+/** 駅用地になるよう道路脇に建物クラスターを置く */
+function plantUrbanCluster(
+  tiles: Tile[],
+  w: number,
+  cx: number,
+  cy: number,
+): void {
+  const spots = [
+    [cx - 1, cy - 1],
+    [cx + 1, cy - 1],
+    [cx - 1, cy + 1],
+    [cx + 1, cy + 1],
+    [cx, cy - 1],
+  ];
+  for (const [x, y] of spots) {
+    if (x! > 0 && y! > 0 && x! < w - 1) {
+      tiles[idx(x!, y!, w)] = makeTile('residential', 1);
+    }
+  }
+}
+
 describe('spendRoom / debt', () => {
   it('借金枠まで建設できる', () => {
     expect(spendRoom(0, DEFAULT_BALANCE)).toBe(DEFAULT_BALANCE.budget.debtLimit);
@@ -38,8 +59,10 @@ describe('rail corridor commit', () => {
     const h = 16;
     const tiles = grassGrid(w, h);
     for (let x = 2; x < w - 2; x++) {
-      tiles[idx(x, 8, w)] = makeTile('road');
+      tiles[idx(x, 8, w)] = makeTile('road', 0, 0, 0, 'x');
     }
+    plantUrbanCluster(tiles, w, 5, 8);
+    plantUrbanCluster(tiles, w, 16, 8);
     const stats = emptyStats(5);
     const tight = {
       ...DEFAULT_BALANCE,
@@ -65,11 +88,13 @@ describe('rail corridor commit', () => {
     const h = 14;
     const tiles = grassGrid(w, h);
     for (let x = 2; x < w - 2; x++) {
-      tiles[idx(x, 7, w)] = makeTile('road');
+      tiles[idx(x, 7, w)] = makeTile('road', 0, 0, 0, 'x');
     }
+    plantUrbanCluster(tiles, w, 4, 7);
+    plantUrbanCluster(tiles, w, 14, 7);
     const stats = emptyStats(5000);
     let builtRail = false;
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 80; i++) {
       const r = tryBuild(
         tiles,
         w,

@@ -43,8 +43,8 @@ function stubCity(
 describe('camera cluster focus', () => {
   it('最大クラスタへ寄せ、サイズに応じてズームする', () => {
     const towns: Settlement[] = [
-      { id: 0, name: '青葉', cx: 12, cy: 12, radius: 8 },
-      { id: 1, name: '緑ヶ丘', cx: 50, cy: 50, radius: 10 },
+      { id: 0, name: '青葉', cx: 12, cy: 12, radius: 8, level: 'village' as const },
+      { id: 1, name: '緑ヶ丘', cx: 50, cy: 50, radius: 10, level: 'village' as const },
     ];
     const city = stubCity(towns, (tiles, w) => {
       for (let y = 8; y <= 14; y++) {
@@ -67,8 +67,8 @@ describe('camera cluster focus', () => {
 
   it('一定時間後に別クラスタへ切り替わる', () => {
     const towns: Settlement[] = [
-      { id: 0, name: '青葉', cx: 12, cy: 12, radius: 8 },
-      { id: 1, name: '緑ヶ丘', cx: 50, cy: 50, radius: 8 },
+      { id: 0, name: '青葉', cx: 12, cy: 12, radius: 8, level: 'village' as const },
+      { id: 1, name: '緑ヶ丘', cx: 50, cy: 50, radius: 8, level: 'village' as const },
     ];
     const city = stubCity(towns, (tiles, w) => {
       for (let y = 8; y <= 16; y++) {

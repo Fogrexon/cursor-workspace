@@ -8,7 +8,7 @@ import {
   refreshSettlementCenters,
 } from './settlements';
 import { growPopulation, recomputeStats, stageFromPopulation } from './stats';
-import { spawnVehicles, updateVehicles } from './vehicles';
+import { spawnVehicles, updateVehicles, createTrainOnPath } from './vehicles';
 
 export function createSimulation(
   config: Partial<SimConfig> = {},
@@ -70,20 +70,41 @@ export function tickSimulation(
     const jitterRng = createRng((next.seed ^ (next.stats.day * 374761393) ^ 0x9e3779b9) >>> 0);
     next.buildCooldown = buildInterval * (bi.jitterMin + jitterRng() * bi.jitterRange);
 
-    const result = tryBuild(
-      next.tiles,
-      next.width,
-      next.height,
-      next.stats,
-      next.stage,
-      next.seed,
-      next.stats.day,
-      balance,
-      next.settlements,
-    );
-    if (result.built && result.kind) {
+    // 余剰予算があるほど1日に複数建設して街を広げる
+    const bursts =
+      next.stats.budget > 320 ? 4 : next.stats.budget > 180 ? 3 : next.stats.budget > 90 ? 2 : 1;
+
+    for (let b = 0; b < bursts; b++) {
+      const result = tryBuild(
+        next.tiles,
+        next.width,
+        next.height,
+        next.stats,
+        next.stage,
+        next.seed,
+        next.stats.day * 17 + b,
+        balance,
+        next.settlements,
+      );
+      if (!result.built || !result.kind) break;
       next.stats.budget -= result.cost;
       events.push(result.kind);
+      if (result.trainPath && result.trainPath.length >= 2) {
+        const trainRng = createRng(
+          (next.seed ^ (next.stats.day * 2654435761) ^ (b * 0x85ebca6b)) >>> 0,
+        );
+        const train = createTrainOnPath(
+          result.trainPath,
+          next.nextVehicleId,
+          trainRng,
+        );
+        if (train) {
+          next.vehicles.push(train);
+          next.nextVehicleId = train.id + 1;
+        }
+      }
+      // 借金が深すぎたらその日は打ち切り
+      if (next.stats.budget + balance.budget.debtLimit < 40) break;
     }
 
     next.stats.day += 1;

@@ -9,7 +9,7 @@ function tileKey(tile: Tile): string {
   // 建設中は数フレームごとにキーを変えて成長を見せる
   const cBucket =
     tile.construction > 0 ? Math.ceil(tile.construction / 4) : 0;
-  return `${tile.kind}:${tile.tier}:${cBucket}:${tile.variant}`;
+  return `${tile.kind}:${tile.tier}:${cBucket}:${tile.variant}:${tile.footprint}`;
 }
 
 export interface WorldSystem {
@@ -18,7 +18,7 @@ export interface WorldSystem {
   dispose(): void;
 }
 
-export function createWorld(maxW = 256, maxH = 256): WorldSystem {
+export function createWorld(maxW = 128, maxH = 128): WorldSystem {
   const root = new THREE.Group();
   root.name = 'world';
 
@@ -62,7 +62,10 @@ export function createWorld(maxW = 256, maxH = 256): WorldSystem {
 
         const mesh = createBuildingMesh(tile, time);
         if (!mesh) continue;
-        mesh.position.set(x * TILE, 0, y * TILE);
+        // 2x2 はアンカー左上から半タイルずらして中心に置く
+        const ox = tile.footprint >= 2 ? 0.5 : 0;
+        const oz = tile.footprint >= 2 ? 0.5 : 0;
+        mesh.position.set((x + ox) * TILE, 0, (y + oz) * TILE);
         buildingsGroup.add(mesh);
         buildingMap.set(idx, { key, mesh });
         animateBuilding(mesh, time);

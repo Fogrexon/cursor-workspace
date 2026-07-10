@@ -3,8 +3,9 @@ import type { CityState, Tile, TileKind } from '../../types';
 import {
   isRailSurface,
   isRoadSurface,
+  junctionKind,
   linkCount,
-  linkMask,
+  orientedLinkMask,
   primaryAxis,
   type LinkMask,
 } from '../../logic/connections';
@@ -13,6 +14,8 @@ import { TILE } from './isoCamera';
 const GRASS_COLORS = [0x3d7a45, 0x458a4e, 0x367040, 0x4a9052];
 const FOREST_COLORS = [0x2a5a32, 0x326038, 0x244828, 0x385c3a];
 const WATER_COLORS = [0x2a5f8f, 0x326a9a, 0x245580];
+const RAIL_BUILD_MAX = 36;
+const ROAD_BUILD_MAX = 28;
 
 type GroundKind =
   | 'grass'
@@ -35,6 +38,11 @@ function groundKind(kind: TileKind): GroundKind {
   return 'grass';
 }
 
+function buildProgress(construction: number, maxFrames: number): number {
+  if (construction <= 0) return 1;
+  return Math.max(0.12, 1 - construction / maxFrames);
+}
+
 interface Layer {
   mesh: THREE.InstancedMesh;
   count: number;
@@ -48,7 +56,7 @@ export interface GroundSystem {
 }
 
 function makeLayer(color: number, capacity: number, y: number): Layer {
-  const geo = new THREE.BoxGeometry(TILE * 0.98, 0.08, TILE * 0.98);
+  const geo = new THREE.BoxGeometry(TILE, 0.08, TILE);
   const mat = new THREE.MeshStandardMaterial({
     color,
     roughness: 0.92,
@@ -63,16 +71,6 @@ function makeLayer(color: number, capacity: number, y: number): Layer {
 }
 
 const dummy = new THREE.Object3D();
-
-/**
- * 中央線ジオメトリは長手がローカル Z。
- * rotY=0 → ワールド Z（南北道路）、rotY=π/2 → ワールド X（東西道路）
- */
-function lineRotY(m: LinkMask): number {
-  const axis = primaryAxis(m);
-  if (axis === 'x') return Math.PI / 2;
-  return 0;
-}
 
 export function createGround(maxTiles: number): GroundSystem {
   const group = new THREE.Group();
@@ -92,7 +90,6 @@ export function createGround(maxTiles: number): GroundSystem {
     return layer;
   });
 
-  // 森の木（簡易インスタンス）
   const trunkGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.28, 5);
   const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3520, roughness: 0.9 });
   const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, maxTiles * 3);
@@ -129,25 +126,22 @@ export function createGround(maxTiles: number): GroundSystem {
   roadLayer.mesh.name = 'road';
   group.add(roadLayer.mesh);
 
-  // 橋デッキ（水の上の道路）
   const bridgeLayer = makeLayer(0x6a5a48, maxTiles, 0.12);
   bridgeLayer.mesh.name = 'bridge';
   group.add(bridgeLayer.mesh);
 
   const bridgeRail = makeLayer(0x8a7a68, maxTiles, 0.22);
-  // 薄い手すり用にスケールで使う
   bridgeRail.mesh.name = 'bridge-rail';
   group.add(bridgeRail.mesh);
 
-  // 道路センターライン (長手 = ローカル Z、rotY で向き)
-  const lineGeo = new THREE.BoxGeometry(TILE * 0.08, 0.02, TILE * 0.55);
+  const lineGeo = new THREE.BoxGeometry(TILE * 0.08, 0.02, TILE * 0.5);
   const lineMat = new THREE.MeshStandardMaterial({
     color: 0xc8c070,
     roughness: 0.8,
     emissive: 0x403800,
     emissiveIntensity: 0.35,
   });
-  const roadLines = new THREE.InstancedMesh(lineGeo, lineMat, maxTiles * 2);
+  const roadLines = new THREE.InstancedMesh(lineGeo, lineMat, maxTiles * 4);
   roadLines.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   roadLines.count = 0;
   roadLines.frustumCulled = false;
@@ -158,15 +152,15 @@ export function createGround(maxTiles: number): GroundSystem {
   railBed.mesh.name = 'rail-bed';
   group.add(railBed.mesh);
 
-  // レール長手 = ローカル X
-  const railGeo = new THREE.BoxGeometry(TILE * 0.7, 0.03, 0.06);
+  // レール長手 = ローカル X。タイル全幅＋わずかに重ねて隣と隙間なく繋ぐ
+  const railGeo = new THREE.BoxGeometry(TILE * 1.02, 0.03, 0.06);
   const railMat = new THREE.MeshStandardMaterial({
     color: 0x8a8a90,
     metalness: 0.6,
     roughness: 0.4,
   });
-  const railsA = new THREE.InstancedMesh(railGeo, railMat, maxTiles);
-  const railsB = new THREE.InstancedMesh(railGeo, railMat.clone(), maxTiles);
+  const railsA = new THREE.InstancedMesh(railGeo, railMat, maxTiles * 4);
+  const railsB = new THREE.InstancedMesh(railGeo, railMat.clone(), maxTiles * 4);
   for (const m of [railsA, railsB]) {
     m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     m.count = 0;
@@ -175,16 +169,29 @@ export function createGround(maxTiles: number): GroundSystem {
     group.add(m);
   }
 
-  const tieGeo = new THREE.BoxGeometry(0.12, 0.04, TILE * 0.45);
+  // 枕木: レール間隔をまたぐ（長手は線路横断方向 = ローカル Z）
+  const tieGeo = new THREE.BoxGeometry(0.14, 0.04, TILE * 0.5);
   const tieMat = new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 0.95 });
-  const ties = new THREE.InstancedMesh(tieGeo, tieMat, maxTiles * 3);
+  const ties = new THREE.InstancedMesh(tieGeo, tieMat, maxTiles * 6);
   ties.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   ties.count = 0;
   ties.frustumCulled = false;
   ties.position.y = 0.07;
   group.add(ties);
 
-  // 踏切の遮断機アーム
+  const siteGeo = new THREE.BoxGeometry(0.18, 0.16, 0.18);
+  const siteMat = new THREE.MeshStandardMaterial({
+    color: 0xd08030,
+    roughness: 0.85,
+    emissive: 0x402000,
+    emissiveIntensity: 0.25,
+  });
+  const buildSites = new THREE.InstancedMesh(siteGeo, siteMat, maxTiles * 2);
+  buildSites.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  buildSites.count = 0;
+  buildSites.frustumCulled = false;
+  group.add(buildSites);
+
   const gateGeo = new THREE.BoxGeometry(TILE * 0.7, 0.04, 0.05);
   const gateMat = new THREE.MeshStandardMaterial({
     color: 0xe05050,
@@ -223,6 +230,7 @@ export function createGround(maxTiles: number): GroundSystem {
     railsA.count = 0;
     railsB.count = 0;
     ties.count = 0;
+    buildSites.count = 0;
     gates.count = 0;
     poles.count = 0;
     trunks.count = 0;
@@ -261,19 +269,40 @@ export function createGround(maxTiles: number): GroundSystem {
   }
 
   function signature(tiles: Tile[], w: number, h: number): string {
-    let hsh = w * 73856093 ^ h * 19349663;
+    let hsh = (w * 73856093) ^ (h * 19349663);
     for (let i = 0; i < tiles.length; i++) {
       const t = tiles[i]!;
+      const cBucket = t.construction > 0 ? Math.ceil(t.construction / 3) : 0;
+      const faceCode =
+        t.facing === 'x' ? 1 : t.facing === 'z' ? 2 : t.facing === 'both' ? 3 : 0;
       hsh =
         (hsh * 31 +
           t.kind.charCodeAt(0) +
           t.kind.charCodeAt(t.kind.length - 1) * 13 +
           t.tier * 7 +
-          (t.construction > 0 ? 1 : 0) +
+          cBucket * 17 +
+          faceCode * 23 +
           t.variant) |
         0;
     }
     return `${hsh}`;
+  }
+
+  function placeRoadArms(
+    x: number,
+    y: number,
+    m: LinkMask,
+    lineCount: { count: number },
+    progress: number,
+  ): void {
+    const len = 0.55 * progress;
+    const placeArm = (rotY: number, ox: number, oz: number) => {
+      placeMesh(roadLines, lineCount, maxTiles * 4, x, y, rotY, ox, 0, oz, 1, 1, len);
+    };
+    if (m.n) placeArm(0, 0, -0.22 * progress);
+    if (m.s) placeArm(0, 0, 0.22 * progress);
+    if (m.e) placeArm(Math.PI / 2, 0.22 * progress, 0);
+    if (m.w) placeArm(Math.PI / 2, -0.22 * progress, 0);
   }
 
   function placeRoadMarkings(
@@ -281,19 +310,47 @@ export function createGround(maxTiles: number): GroundSystem {
     y: number,
     m: LinkMask,
     lineCount: { count: number },
+    progress = 1,
   ): void {
+    const kind = junctionKind(m);
+    if (kind === 'L' || kind === 'T' || kind === 'cross') {
+      placeRoadArms(x, y, m, lineCount, progress);
+      return;
+    }
+    if (kind === 'none') {
+      placeMesh(roadLines, lineCount, maxTiles * 4, x, y, 0, 0, 0, 0, 1, 1, progress);
+      return;
+    }
     const axis = primaryAxis(m);
-    if (axis === 'both') {
-      // 交差点: 短い十字
-      placeMesh(roadLines, lineCount, maxTiles * 2, x, y, 0, 0, 0, 0, 1, 1, 0.45);
-      placeMesh(roadLines, lineCount, maxTiles * 2, x, y, Math.PI / 2, 0, 0, 0, 1, 1, 0.45);
-      return;
+    const rot = axis === 'x' ? Math.PI / 2 : 0;
+    placeMesh(roadLines, lineCount, maxTiles * 4, x, y, rot, 0, 0, 0, 1, 1, progress);
+  }
+
+  function placeRailArm(
+    x: number,
+    y: number,
+    rotY: number,
+    ox: number,
+    oz: number,
+    /** タイル半幅ぶんのスケール（完成時 0.5） */
+    halfScale: number,
+    railACount: { count: number },
+    railBCount: { count: number },
+    tieCount: { count: number },
+  ): void {
+    if (rotY === 0) {
+      placeMesh(railsA, railACount, maxTiles * 4, x, y, 0, ox, 0, oz - 0.12, halfScale, 1, 1);
+      placeMesh(railsB, railBCount, maxTiles * 4, x, y, 0, ox, 0, oz + 0.12, halfScale, 1, 1);
+      if (halfScale > 0.2) {
+        placeMesh(ties, tieCount, maxTiles * 6, x, y, 0, ox, 0, oz);
+      }
+    } else {
+      placeMesh(railsA, railACount, maxTiles * 4, x, y, Math.PI / 2, ox - 0.12, 0, oz, halfScale, 1, 1);
+      placeMesh(railsB, railBCount, maxTiles * 4, x, y, Math.PI / 2, ox + 0.12, 0, oz, halfScale, 1, 1);
+      if (halfScale > 0.2) {
+        placeMesh(ties, tieCount, maxTiles * 6, x, y, Math.PI / 2, ox, 0, oz);
+      }
     }
-    if (axis === 'none') {
-      placeMesh(roadLines, lineCount, maxTiles * 2, x, y, 0);
-      return;
-    }
-    placeMesh(roadLines, lineCount, maxTiles * 2, x, y, lineRotY(m));
   }
 
   function placeRails(
@@ -303,29 +360,51 @@ export function createGround(maxTiles: number): GroundSystem {
     railACount: { count: number },
     railBCount: { count: number },
     tieCount: { count: number },
+    progress = 1,
   ): void {
+    const kind = junctionKind(m);
+    if (kind === 'L' || kind === 'T' || kind === 'cross') {
+      // 各方向へタイル端まで届く半アーム（中心 → 辺）
+      const half = 0.5 * progress;
+      const d = 0.25 * progress;
+      if (m.e) placeRailArm(x, y, 0, d, 0, half, railACount, railBCount, tieCount);
+      if (m.w) placeRailArm(x, y, 0, -d, 0, half, railACount, railBCount, tieCount);
+      if (m.s) placeRailArm(x, y, Math.PI / 2, 0, d, half, railACount, railBCount, tieCount);
+      if (m.n) placeRailArm(x, y, Math.PI / 2, 0, -d, half, railACount, railBCount, tieCount);
+      return;
+    }
+
     const axis = primaryAxis(m);
-    // レール geo は長手 X。南北向きなら 90° 回転し、オフセットも入れ替え
-    const rot = axis === 'z' ? Math.PI / 2 : 0;
     if (axis === 'z') {
-      placeMesh(railsA, railACount, maxTiles, x, y, rot, -0.12, 0, 0);
-      placeMesh(railsB, railBCount, maxTiles, x, y, rot, 0.12, 0, 0);
-      for (let i = -1; i <= 1; i++) {
-        placeMesh(ties, tieCount, maxTiles * 3, x, y, rot, 0, 0, i * 0.22);
+      placeMesh(railsA, railACount, maxTiles * 4, x, y, Math.PI / 2, -0.12, 0, 0, progress, 1, 1);
+      placeMesh(railsB, railBCount, maxTiles * 4, x, y, Math.PI / 2, 0.12, 0, 0, progress, 1, 1);
+      if (progress > 0.3) {
+        for (let i = -1; i <= 1; i++) {
+          placeMesh(ties, tieCount, maxTiles * 6, x, y, Math.PI / 2, 0, 0, i * 0.28 * progress);
+        }
       }
-    } else if (axis === 'both') {
-      // 交差: 両方の向きを薄く重ねる
-      placeMesh(railsA, railACount, maxTiles, x, y, 0, 0, 0, -0.12, 0.7, 1, 1);
-      placeMesh(railsB, railBCount, maxTiles, x, y, 0, 0, 0, 0.12, 0.7, 1, 1);
-      placeMesh(railsA, railACount, maxTiles, x, y, Math.PI / 2, -0.12, 0, 0, 0.7, 1, 1);
-      placeMesh(railsB, railBCount, maxTiles, x, y, Math.PI / 2, 0.12, 0, 0, 0.7, 1, 1);
     } else {
-      placeMesh(railsA, railACount, maxTiles, x, y, 0, 0, 0, -0.12);
-      placeMesh(railsB, railBCount, maxTiles, x, y, 0, 0, 0, 0.12);
-      for (let i = -1; i <= 1; i++) {
-        placeMesh(ties, tieCount, maxTiles * 3, x, y, 0, i * 0.22, 0, 0);
+      placeMesh(railsA, railACount, maxTiles * 4, x, y, 0, 0, 0, -0.12, progress, 1, 1);
+      placeMesh(railsB, railBCount, maxTiles * 4, x, y, 0, 0, 0, 0.12, progress, 1, 1);
+      if (progress > 0.3) {
+        for (let i = -1; i <= 1; i++) {
+          placeMesh(ties, tieCount, maxTiles * 6, x, y, 0, i * 0.28 * progress, 0, 0);
+        }
       }
     }
+  }
+
+  function placeBuildSite(
+    x: number,
+    y: number,
+    progress: number,
+    siteCount: { count: number },
+    time: number,
+  ): void {
+    if (progress >= 0.95) return;
+    const bob = 0.02 * Math.sin(time * 3 + x + y);
+    placeMesh(buildSites, siteCount, maxTiles * 2, x, y, 0, -0.2, 0.12 + bob, -0.15, 1, 1, 1);
+    placeMesh(buildSites, siteCount, maxTiles * 2, x, y, 0.4, 0.18, 0.1 + bob, 0.2, 0.8, 0.8, 0.8);
   }
 
   function placeCrossingGates(
@@ -336,20 +415,14 @@ export function createGround(maxTiles: number): GroundSystem {
     gateCount: { count: number },
     poleCount: { count: number },
   ): void {
-    // 遮断機は道路軸に直交して配置。ゆっくり開閉アニメ
     const roadAxis = primaryAxis(roadM);
     const open = 0.15 + 0.85 * (0.5 + 0.5 * Math.sin(time * 0.7 + x * 0.3 + y * 0.2));
-    // open=1 で水平(閉)、open=0 でほぼ垂直(開) — chill なので半開き気味に揺らす
-    const armAngle = (1 - open) * (Math.PI / 2) * 0.85;
 
     if (roadAxis === 'z' || roadAxis === 'none') {
-      // 道路が南北 → 遮断機は東西に伸びる (rotY=0)、両脇にポール
       placeMesh(poles, poleCount, maxTiles * 2, x, y, 0, -0.35, 0.18, 0);
       placeMesh(poles, poleCount, maxTiles * 2, x, y, 0, 0.35, 0.18, 0);
-      // アーム: ポール付け根から内側へ。簡易のため水平スケールで開閉表現
       placeMesh(gates, gateCount, maxTiles * 2, x, y, 0, -0.1, 0.28, 0, open, 1, 1);
       placeMesh(gates, gateCount, maxTiles * 2, x, y, 0, 0.1, 0.28, 0, open, 1, 1);
-      void armAngle;
     } else {
       placeMesh(poles, poleCount, maxTiles * 2, x, y, 0, 0, 0.18, -0.35);
       placeMesh(poles, poleCount, maxTiles * 2, x, y, 0, 0, 0.18, 0.35);
@@ -363,8 +436,8 @@ export function createGround(maxTiles: number): GroundSystem {
     const sig = signature(tiles, width, height);
     const sizeChanged = width !== lastW || height !== lastH;
 
-    // 踏切ゲートは毎フレームアニメしたいので、crossing があるときは部分更新
     const hasCrossing = tiles.some((t) => t.kind === 'crossing');
+    const hasBuilding = tiles.some((t) => t.construction > 0);
     if (sig === lastSig && !sizeChanged && !hasCrossing) {
       for (const layer of waterLayers) {
         const mat = layer.mesh.material as THREE.MeshStandardMaterial;
@@ -373,14 +446,13 @@ export function createGround(maxTiles: number): GroundSystem {
       return;
     }
 
-    // crossing アニメのみのフレームではゲートだけ更新
-    if (sig === lastSig && !sizeChanged && hasCrossing) {
+    if (sig === lastSig && !sizeChanged && hasCrossing && !hasBuilding) {
       const gateCount = { count: 0 };
       const poleCount = { count: 0 };
       for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
           if (tiles[y * width + x]!.kind !== 'crossing') continue;
-          const roadM = linkMask(tiles, x, y, width, height, isRoadSurface);
+          const roadM = orientedLinkMask(tiles, x, y, width, height, isRoadSurface);
           placeCrossingGates(x, y, roadM, time, gateCount, poleCount);
         }
       }
@@ -404,6 +476,7 @@ export function createGround(maxTiles: number): GroundSystem {
     const railACount = { count: 0 };
     const railBCount = { count: 0 };
     const tieCount = { count: 0 };
+    const siteCount = { count: 0 };
     const gateCount = { count: 0 };
     const poleCount = { count: 0 };
     const trunkCount = { count: 0 };
@@ -424,7 +497,6 @@ export function createGround(maxTiles: number): GroundSystem {
         }
         if (gk === 'forest') {
           place(forestLayers[tile.variant % forestLayers.length]!, x, y);
-          // 2〜3本の木
           const nTrees = 2 + (tile.variant % 2);
           for (let i = 0; i < nTrees; i++) {
             const ox = ((i * 0.37 + tile.variant * 0.11) % 0.7) - 0.35;
@@ -437,15 +509,19 @@ export function createGround(maxTiles: number): GroundSystem {
 
         if (gk === 'bridge') {
           place(waterLayers[0]!, x, y);
-          place(bridgeLayer, x, y, 0, 0.88, 0.88);
-          const roadM = linkMask(tiles, x, y, width, height, isRoadSurface);
-          placeRoadMarkings(x, y, roadM, lineCount);
-          // 簡易手すり
+          const roadProg = buildProgress(tile.construction, ROAD_BUILD_MAX);
+          place(bridgeLayer, x, y, 0, roadProg, roadProg);
+          const roadM = orientedLinkMask(tiles, x, y, width, height, isRoadSurface);
+          placeRoadMarkings(x, y, roadM, lineCount, roadProg);
           place(bridgeRail, x, y, 0, 0.95, 0.12);
           place(bridgeRail, x, y, 0, 0.12, 0.95);
-          const railM = linkMask(tiles, x, y, width, height, isRailSurface);
+          const railM = orientedLinkMask(tiles, x, y, width, height, isRailSurface);
           if (linkCount(railM) > 0) {
-            placeRails(x, y, railM, railACount, railBCount, tieCount);
+            const railProg = buildProgress(tile.construction, RAIL_BUILD_MAX);
+            placeRails(x, y, railM, railACount, railBCount, tieCount, railProg);
+          }
+          if (tile.construction > 0) {
+            placeBuildSite(x, y, roadProg, siteCount, time);
           }
           continue;
         }
@@ -453,21 +529,29 @@ export function createGround(maxTiles: number): GroundSystem {
         place(grassLayers[tile.variant % grassLayers.length]!, x, y);
 
         if (gk === 'road' || gk === 'crossing' || tile.kind === 'station') {
-          place(roadLayer, x, y, 0, 0.92, 0.92);
-          const roadM = linkMask(tiles, x, y, width, height, isRoadSurface);
-          placeRoadMarkings(x, y, roadM, lineCount);
+          const roadProg = buildProgress(tile.construction, ROAD_BUILD_MAX);
+          place(roadLayer, x, y, 0, Math.max(0.4, roadProg), Math.max(0.4, roadProg));
+          const roadM = orientedLinkMask(tiles, x, y, width, height, isRoadSurface);
+          placeRoadMarkings(x, y, roadM, lineCount, roadProg);
+          if (tile.construction > 0 && tile.kind === 'road') {
+            placeBuildSite(x, y, roadProg, siteCount, time);
+          }
         }
 
         if (gk === 'rail' || gk === 'crossing' || tile.kind === 'station') {
+          const railProg = buildProgress(tile.construction, RAIL_BUILD_MAX);
           if (tile.kind === 'rail') {
-            place(railBed, x, y, 0, 0.75, 0.75);
+            place(railBed, x, y, 0, Math.max(0.35, railProg), Math.max(0.35, railProg));
           }
-          const railM = linkMask(tiles, x, y, width, height, isRailSurface);
-          placeRails(x, y, railM, railACount, railBCount, tieCount);
+          const railM = orientedLinkMask(tiles, x, y, width, height, isRailSurface);
+          placeRails(x, y, railM, railACount, railBCount, tieCount, railProg);
+          if (tile.construction > 0 && (tile.kind === 'rail' || tile.kind === 'crossing')) {
+            placeBuildSite(x, y, railProg, siteCount, time);
+          }
         }
 
         if (gk === 'crossing') {
-          const roadM = linkMask(tiles, x, y, width, height, isRoadSurface);
+          const roadM = orientedLinkMask(tiles, x, y, width, height, isRoadSurface);
           placeCrossingGates(x, y, roadM, time, gateCount, poleCount);
         }
       }
@@ -509,6 +593,8 @@ export function createGround(maxTiles: number): GroundSystem {
     railsB.instanceMatrix.needsUpdate = true;
     ties.count = tieCount.count;
     ties.instanceMatrix.needsUpdate = true;
+    buildSites.count = siteCount.count;
+    buildSites.instanceMatrix.needsUpdate = true;
     gates.count = gateCount.count;
     gates.instanceMatrix.needsUpdate = true;
     poles.count = poleCount.count;

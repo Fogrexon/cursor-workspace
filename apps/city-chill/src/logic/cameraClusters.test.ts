@@ -30,8 +30,8 @@ describe('computeCityClusters', () => {
     paintBlock(tiles, w, 48, 48, 56, 56);
 
     const clusters = computeCityClusters(tiles, w, w, [
-      { id: 0, name: '青葉', cx: 11, cy: 11, radius: 8 },
-      { id: 1, name: '緑ヶ丘', cx: 52, cy: 52, radius: 8 },
+      { id: 0, name: '青葉', cx: 11, cy: 11, radius: 8, level: 'village' as const },
+      { id: 1, name: '緑ヶ丘', cx: 52, cy: 52, radius: 8, level: 'village' as const },
     ]);
 
     expect(clusters.length).toBe(2);
@@ -58,8 +58,8 @@ describe('computeCityClusters', () => {
     tiles[idx(48, 11, w)] = makeTile('station');
 
     const clusters = computeCityClusters(tiles, w, w, [
-      { id: 0, name: '青葉', cx: 11, cy: 11, radius: 8 },
-      { id: 1, name: '緑ヶ丘', cx: 51, cy: 11, radius: 8 },
+      { id: 0, name: '青葉', cx: 11, cy: 11, radius: 8, level: 'village' as const },
+      { id: 1, name: '緑ヶ丘', cx: 51, cy: 11, radius: 8, level: 'village' as const },
     ]);
 
     expect(clusters.length).toBe(2);

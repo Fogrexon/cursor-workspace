@@ -8,7 +8,7 @@ describe('mergeBalance', () => {
     const m = mergeBalance();
     expect(m.population.initial).toBe(DEFAULT_BALANCE.population.initial);
     expect(m.buildCosts.road).toBe(DEFAULT_BALANCE.buildCosts.road);
-    expect(m.stages.town).toBe(35);
+    expect(m.stages.town).toBe(DEFAULT_BALANCE.stages.town);
   });
 
   it('部分上書きできる', () => {

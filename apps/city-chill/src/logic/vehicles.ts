@@ -1,5 +1,5 @@
 import type { PathPose, Tile, Vehicle, VehicleKind } from '../types';
-import { getTile, RAIL_LIKE, ROAD_LIKE } from './grid';
+import { getTile, neighbors4, RAIL_LIKE, ROAD_LIKE } from './grid';
 import { findNetworkPath } from './networkPath';
 import { createRng, pickInt } from './rng';
 
@@ -111,12 +111,114 @@ function pickOther(
   });
   if (candidates.length === 0) {
     if (pool.length <= 1) return null;
-    // 近いものしか無い場合でも別マスへ
     const others = pool.filter((p) => p.x !== from.x || p.y !== from.y);
     if (others.length === 0) return null;
     return others[pickInt(rng, 0, others.length - 1)]!;
   }
   return candidates[pickInt(rng, 0, candidates.length - 1)]!;
+}
+
+/**
+ * 線路網上で start から到達可能なマスのキー集合。
+ * 非連結の別路線の駅を目的地に選ばないために使う。
+ */
+function reachableRailKeys(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  start: { x: number; y: number },
+  maxNodes = 4000,
+): Set<number> {
+  const key = (x: number, y: number) => y * width + x;
+  const st = getTile(tiles, start.x, start.y, width, height);
+  if (!st || !RAIL_LIKE.has(st.kind)) return new Set();
+
+  const seen = new Set<number>();
+  const q: Array<{ x: number; y: number }> = [{ x: start.x, y: start.y }];
+  seen.add(key(start.x, start.y));
+  while (q.length > 0 && seen.size < maxNodes) {
+    const cur = q.shift()!;
+    for (const n of neighbors4(cur.x, cur.y, width, height)) {
+      const nk = key(n.x, n.y);
+      if (seen.has(nk)) continue;
+      const t = tiles[nk]!;
+      if (!RAIL_LIKE.has(t.kind)) continue;
+      seen.add(nk);
+      q.push(n);
+    }
+  }
+  return seen;
+}
+
+/**
+ * 同じ網上の駅を巡回順に並べる。
+ * 端の駅から線路距離の最近傍でつなぎ、全駅を通るルートにする。
+ */
+export function orderStationsForTour(
+  stations: Array<{ x: number; y: number }>,
+  tiles: Tile[],
+  width: number,
+  height: number,
+): Array<{ x: number; y: number }> {
+  if (stations.length <= 1) return stations.map((s) => ({ ...s }));
+  if (stations.length === 2) return stations.map((s) => ({ ...s }));
+
+  const posKey = (p: { x: number; y: number }) => `${p.x},${p.y}`;
+  const cx = stations.reduce((s, p) => s + p.x, 0) / stations.length;
+  const cy = stations.reduce((s, p) => s + p.y, 0) / stations.length;
+
+  // 重心から一番遠い駅を端点として開始
+  let start = stations[0]!;
+  let startD = -1;
+  for (const s of stations) {
+    const d = Math.hypot(s.x - cx, s.y - cy);
+    if (d > startD) {
+      startD = d;
+      start = s;
+    }
+  }
+
+  const order: Array<{ x: number; y: number }> = [{ ...start }];
+  const used = new Set([posKey(start)]);
+
+  while (order.length < stations.length) {
+    const last = order[order.length - 1]!;
+    let best: { x: number; y: number } | null = null;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const s of stations) {
+      if (used.has(posKey(s))) continue;
+      const path = findNetworkPath(
+        tiles,
+        width,
+        height,
+        last,
+        s,
+        RAIL_LIKE,
+        TRAIN_PATH_MAX,
+      );
+      const d = path && path.length >= 2 ? pathTotalLength(path) : Number.POSITIVE_INFINITY;
+      if (d < bestD) {
+        bestD = d;
+        best = s;
+      }
+    }
+    if (!best || !Number.isFinite(bestD)) {
+      // 経路が取れない残りはユークリッド最近傍で埋める
+      for (const s of stations) {
+        if (used.has(posKey(s))) continue;
+        const d = Math.hypot(s.x - last.x, s.y - last.y);
+        if (d < bestD) {
+          bestD = d;
+          best = s;
+        }
+      }
+    }
+    if (!best) break;
+    order.push({ ...best });
+    used.add(posKey(best));
+  }
+
+  return order;
 }
 
 /** 車: 道路マス目的地へ経路を割り当て */
@@ -129,7 +231,6 @@ export function assignCarTrip(
   rng: () => number,
 ): boolean {
   const start = { x: Math.round(v.x), y: Math.round(v.y) };
-  // 現在地が道路上でなければ近い道路へスナップ
   const here = getTile(tiles, start.x, start.y, width, height);
   let from = start;
   if (!here || !ROAD_LIKE.has(here.kind)) {
@@ -155,7 +256,7 @@ export function assignCarTrip(
   return true;
 }
 
-/** 電車: 駅目的地へ経路を割り当て（都市間の長距離も可） */
+/** 電車: 同じ網上の全駅を順に巡回する */
 export function assignTrainTrip(
   v: Vehicle,
   tiles: Tile[],
@@ -174,52 +275,108 @@ export function assignTrainTrip(
     from = pool[pickInt(rng, 0, pool.length - 1)]!;
   }
 
-  const destPool = stations.length >= 2 ? stations : rails;
-  const others = destPool.filter((p) => p.x !== from.x || p.y !== from.y);
-  if (others.length === 0) return false;
+  const reach = reachableRailKeys(tiles, width, height, from);
+  if (reach.size < 2) return false;
+  const key = (x: number, y: number) => y * width + x;
 
-  // 遠い駅を優先（都市間）。到達可能なものを探す
-  const ranked = others
-    .map((p) => ({ ...p, d: Math.hypot(p.x - from.x, p.y - from.y) }))
-    .sort((a, b) => b.d - a.d);
+  const onNetStations = stations.filter((p) => reach.has(key(p.x, p.y)));
 
   let dest: { x: number; y: number } | null = null;
-  let path: Array<{ x: number; y: number }> | null = null;
 
-  // 遠い順。先頭数件だけ軽くシャッフルしてバリエーションを出す
-  const tryOrder = [...ranked];
-  const top = Math.min(4, tryOrder.length);
-  for (let i = top - 1; i > 0; i--) {
-    const j = pickInt(rng, 0, i);
-    const tmp = tryOrder[i]!;
-    tryOrder[i] = tryOrder[j]!;
-    tryOrder[j] = tmp;
-  }
-
-  for (const cand of tryOrder) {
-    const p = findNetworkPath(
-      tiles,
-      width,
-      height,
-      from,
-      cand,
-      RAIL_LIKE,
-      TRAIN_PATH_MAX,
-    );
-    if (p && p.length >= 2) {
-      dest = { x: cand.x, y: cand.y };
-      path = p;
-      break;
+  if (onNetStations.length >= 2) {
+    const tour = orderStationsForTour(onNetStations, tiles, width, height);
+    // いま一番近い駅を特定
+    let nearestIdx = 0;
+    let nearestD = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < tour.length; i++) {
+      const s = tour[i]!;
+      const d = Math.hypot(s.x - from.x, s.y - from.y);
+      if (d < nearestD) {
+        nearestD = d;
+        nearestIdx = i;
+      }
     }
-  }
-  if (!path || !dest) return false;
 
-  v.destination = dest;
+    if (nearestD > 1.5) {
+      // 駅と駅の間 → まず最寄り駅へ
+      dest = tour[nearestIdx]!;
+    } else if (tour.length === 2) {
+      dest = tour[1 - nearestIdx]!;
+      v.railDir = nearestIdx === 0 ? 1 : -1;
+    } else {
+      // 3駅以上: 端で折り返しながら隣接駅へ（全駅停車）
+      let dir: 1 | -1 = v.railDir ?? 1;
+      let nextIdx = nearestIdx + dir;
+      if (nextIdx < 0 || nextIdx >= tour.length) {
+        dir = dir === 1 ? -1 : 1;
+        nextIdx = nearestIdx + dir;
+      }
+      if (nextIdx < 0 || nextIdx >= tour.length) {
+        nextIdx = nearestIdx === 0 ? 1 : nearestIdx - 1;
+        dir = nextIdx > nearestIdx ? 1 : -1;
+      }
+      v.railDir = dir;
+      dest = tour[nextIdx]!;
+    }
+  } else {
+    // 駅が足りないときは線路マス間
+    const destPool = rails.filter(
+      (p) => reach.has(key(p.x, p.y)) && (p.x !== from.x || p.y !== from.y),
+    );
+    if (destPool.length === 0) return false;
+    dest = pickOther(destPool, from, rng, 3);
+  }
+
+  if (!dest) return false;
+  const path = findNetworkPath(
+    tiles,
+    width,
+    height,
+    from,
+    dest,
+    RAIL_LIKE,
+    TRAIN_PATH_MAX,
+  );
+  if (!path || path.length < 2) return false;
+
+  v.destination = { x: dest.x, y: dest.y };
   v.path = path;
   const cars = v.cars ?? 4;
   v.progress = Math.min((cars - 1) * TRAIN_CAR_SPACING, pathTotalLength(path) * 0.2);
   applyPose(v);
   return true;
+}
+
+/**
+ * 敷設した線路経路の上に電車を1本作る。
+ * 線路追加タイミングで呼ぶ。
+ */
+export function createTrainOnPath(
+  path: Array<{ x: number; y: number }>,
+  nextId: number,
+  rng: () => number,
+): Vehicle | null {
+  if (path.length < 2) return null;
+  const cars = pickInt(rng, 3, 5);
+  const start = path[0]!;
+  const dest = path[path.length - 1]!;
+  const v: Vehicle = {
+    id: nextId,
+    kind: 'train',
+    x: start.x,
+    y: start.y,
+    dir: 0,
+    speed: 2.4,
+    progress: 0,
+    path: path.map((p) => ({ ...p })),
+    destination: { ...dest },
+    color: 0,
+    cars,
+    wait: 0,
+  };
+  v.progress = Math.min((cars - 1) * TRAIN_CAR_SPACING, pathTotalLength(v.path) * 0.2);
+  applyPose(v);
+  return v;
 }
 
 export function spawnVehicles(
@@ -234,13 +391,9 @@ export function spawnVehicles(
 ): { vehicles: Vehicle[]; nextId: number } {
   const rng = createRng((seed + day * 9973) >>> 0);
   const roads = collectTiles(tiles, width, height, (t) => ROAD_LIKE.has(t.kind));
-  const rails = collectTiles(tiles, width, height, (t) => RAIL_LIKE.has(t.kind));
   const stations = collectTiles(tiles, width, height, (t) => t.kind === 'station');
 
   const targetCars = Math.min(40, Math.floor(population / 8) + Math.floor(roads.length / 6));
-  // 追加の電車は控えめ。最低1本は別途保証する
-  const bonusTrains =
-    stations.length >= 4 ? Math.min(2, Math.floor(stations.length / 4)) : 0;
 
   // 経路が無効になった車両は落とす
   const vehicles = existing.filter((v) => {
@@ -280,55 +433,93 @@ export function spawnVehicles(
     vehicles.push(v);
   }
 
-  // 走れる線路があるなら、必ず少なくとも1本は走らせる
-  if (vehicles.filter((v) => v.kind === 'train').length === 0) {
-    const guaranteed = spawnGuaranteedTrain(
-      tiles,
-      width,
-      height,
-      stations,
-      rails,
-      id,
-      rng,
-    );
-    if (guaranteed) {
-      vehicles.push(guaranteed);
-      id = guaranteed.id + 1;
-    }
-  }
-
-  // 余裕があれば追加（失敗しても最低1本は既にある）
-  attempts = 0;
-  const targetTrains = 1 + bonusTrains;
-  while (vehicles.filter((v) => v.kind === 'train').length < targetTrains && rails.length > 1) {
-    if (++attempts > 20) break;
-    const pool = stations.length > 0 ? stations : rails;
-    const start = pool[pickInt(rng, 0, pool.length - 1)]!;
-    const cars = pickInt(rng, 3, 5);
-    const v: Vehicle = {
-      id: id++,
-      kind: 'train',
-      x: start.x,
-      y: start.y,
-      dir: 0,
-      speed: 2.4,
-      progress: 0,
-      path: [start, start],
-      destination: { ...start },
-      color: 0,
-      cars,
-      wait: 0,
-    };
-    if (!assignTrainTrip(v, tiles, width, height, stations, rails, rng)) continue;
-    vehicles.push(v);
-  }
+  // 連結した鉄道路線ごと（駅が2つ以上）に、少なくとも1本は走らせる
+  id = ensureTrainsOnComponents(tiles, width, height, stations, vehicles, id, rng);
 
   return { vehicles, nextId: id };
 }
 
+/** 駅の連結成分を列挙（線路でつながった駅グループ） */
+function stationComponents(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  stations: Array<{ x: number; y: number }>,
+): Array<Array<{ x: number; y: number }>> {
+  const key = (x: number, y: number) => y * width + x;
+  const unused = new Set(stations.map((s) => key(s.x, s.y)));
+  const byKey = new Map(stations.map((s) => [key(s.x, s.y), s]));
+  const comps: Array<Array<{ x: number; y: number }>> = [];
+
+  while (unused.size > 0) {
+    const startKey = unused.values().next().value as number;
+    const start = byKey.get(startKey)!;
+    const reach = reachableRailKeys(tiles, width, height, start);
+    const group: Array<{ x: number; y: number }> = [];
+    for (const k of unused) {
+      if (reach.has(k)) {
+        group.push(byKey.get(k)!);
+      }
+    }
+    for (const s of group) unused.delete(key(s.x, s.y));
+    if (group.length > 0) comps.push(group);
+  }
+  return comps;
+}
+
+function trainOnComponent(
+  vehicles: Vehicle[],
+  tiles: Tile[],
+  width: number,
+  height: number,
+  stations: Array<{ x: number; y: number }>,
+): boolean {
+  if (stations.length === 0) return false;
+  const reach = reachableRailKeys(tiles, width, height, stations[0]!);
+  const key = (x: number, y: number) => y * width + x;
+  return vehicles.some((v) => {
+    if (v.kind !== 'train') return false;
+    return reach.has(key(Math.round(v.x), Math.round(v.y)));
+  });
+}
+
+function ensureTrainsOnComponents(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  stations: Array<{ x: number; y: number }>,
+  vehicles: Vehicle[],
+  nextId: number,
+  rng: () => number,
+): number {
+  let id = nextId;
+  if (stations.length < 2) {
+    if (vehicles.every((v) => v.kind !== 'train')) {
+      const rails = collectTiles(tiles, width, height, (t) => RAIL_LIKE.has(t.kind));
+      const t = spawnGuaranteedTrain(tiles, width, height, stations, rails, id, rng);
+      if (t) {
+        vehicles.push(t);
+        id = t.id + 1;
+      }
+    }
+    return id;
+  }
+
+  const comps = stationComponents(tiles, width, height, stations);
+  for (const comp of comps) {
+    if (comp.length < 2) continue;
+    if (trainOnComponent(vehicles, tiles, width, height, comp)) continue;
+    const t = spawnGuaranteedTrain(tiles, width, height, comp, comp, id, rng);
+    if (t) {
+      vehicles.push(t);
+      id = t.id + 1;
+    }
+  }
+  return id;
+}
+
 /**
  * 駅ペア（なければ線路端）を総当たりで試し、走れる経路があれば電車を1本作る。
- * ランダム失敗で「線路だけ」になるのを防ぐ。
  */
 function spawnGuaranteedTrain(
   tiles: Tile[],
@@ -342,7 +533,6 @@ function spawnGuaranteedTrain(
   const starts = stations.length >= 2 ? stations : rails;
   if (starts.length < 2) return null;
 
-  // 遠いペアから試す（都市間を優先）
   const pairs: Array<{ a: { x: number; y: number }; b: { x: number; y: number }; d: number }> =
     [];
   for (let i = 0; i < starts.length; i++) {
@@ -354,9 +544,7 @@ function spawnGuaranteedTrain(
   }
   pairs.sort((p, q) => q.d - p.d);
 
-  const limit = Math.min(pairs.length, stations.length >= 2 ? 48 : 24);
-  for (let i = 0; i < limit; i++) {
-    const { a, b } = pairs[i]!;
+  for (const { a, b } of pairs) {
     const path = findNetworkPath(tiles, width, height, a, b, RAIL_LIKE, TRAIN_PATH_MAX);
     if (!path || path.length < 2) continue;
 
@@ -403,15 +591,16 @@ export function updateVehicles(
     ? createRng((world.seed ^ (world.day * 7919) ^ (vehicles.length * 104729)) >>> 0)
     : createRng(1);
 
-  const roads = world
-    ? collectTiles(world.tiles, world.width, world.height, (t) => ROAD_LIKE.has(t.kind))
-    : [];
-  const rails = world
-    ? collectTiles(world.tiles, world.width, world.height, (t) => RAIL_LIKE.has(t.kind))
-    : [];
-  const stations = world
-    ? collectTiles(world.tiles, world.width, world.height, (t) => t.kind === 'station')
-    : [];
+  // 毎フレーム全マップ走査しない。再割当が必要なときだけ集める
+  let roads: Array<{ x: number; y: number }> | null = null;
+  let rails: Array<{ x: number; y: number }> | null = null;
+  let stations: Array<{ x: number; y: number }> | null = null;
+  const ensurePools = () => {
+    if (!world || roads) return;
+    roads = collectTiles(world.tiles, world.width, world.height, (t) => ROAD_LIKE.has(t.kind));
+    rails = collectTiles(world.tiles, world.width, world.height, (t) => RAIL_LIKE.has(t.kind));
+    stations = collectTiles(world.tiles, world.width, world.height, (t) => t.kind === 'station');
+  };
 
   for (const v of vehicles) {
     if ((v.wait ?? 0) > 0) {
@@ -421,7 +610,10 @@ export function updateVehicles(
 
     const total = pathTotalLength(v.path);
     if (total < 0.01) {
-      if (world) reassign(v, world, roads, rails, stations, rng);
+      if (world) {
+        ensurePools();
+        reassign(v, world, roads!, rails!, stations!, rng);
+      }
       continue;
     }
 
@@ -430,11 +622,14 @@ export function updateVehicles(
     if (v.progress >= total - 0.001) {
       v.progress = total;
       applyPose(v);
-      // 到着 → 待機してから次へ。経路は先に組んでおく
       if (world) {
-        reassign(v, world, roads, rails, stations, rng);
-        v.progress = 0;
-        applyPose(v);
+        ensurePools();
+        const ok = reassign(v, world, roads!, rails!, stations!, rng);
+        if (!ok) {
+          // 失敗時は終点に留まり、次の待機後に再試行（テレポートしない）
+          v.progress = total;
+          applyPose(v);
+        }
       } else {
         v.progress = 0;
       }
@@ -453,10 +648,9 @@ function reassign(
   rails: Array<{ x: number; y: number }>,
   stations: Array<{ x: number; y: number }>,
   rng: () => number,
-): void {
+): boolean {
   if (v.kind === 'train') {
-    assignTrainTrip(v, world.tiles, world.width, world.height, stations, rails, rng);
-  } else {
-    assignCarTrip(v, world.tiles, world.width, world.height, roads, rng);
+    return assignTrainTrip(v, world.tiles, world.width, world.height, stations, rails, rng);
   }
+  return assignCarTrip(v, world.tiles, world.width, world.height, roads, rng);
 }

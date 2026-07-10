@@ -1,5 +1,12 @@
-import type { CityStats, GrowthStage, Settlement, Tile, TileKind } from '../types';
+import type { CityStats, GrowthStage, Settlement, SettlementLevel, Tile, TileFacing, TileKind } from '../types';
 import { DEFAULT_BALANCE, type BalanceConfig } from './balance';
+import {
+  applyFacing,
+  axisBetween,
+  facingFromPath,
+  isRoadSurface,
+  mergeFacing,
+} from './connections';
 import {
   findDemolitionForRoad,
   isLastEscapeForBuilding,
@@ -9,9 +16,14 @@ import {
 } from './demolish';
 import {
   adjacentToRoad,
+  BUILDING_KINDS,
+  FOOTPRINT_2X2,
+  footprint2x2TouchesRoad,
   getTile,
+  idx,
   inBounds,
   isBuildable,
+  isFootprint2x2Clear,
   isPaveable,
   makeTile,
   neighbors4,
@@ -32,8 +44,89 @@ import { pavedKind, terrainBuildSurcharge } from './terrain';
 /** 建設アニメの初期フレーム数 (大きいほど長い) */
 export const CONSTRUCTION_FRAMES = 48;
 export const UPGRADE_FRAMES = 36;
-export const ROAD_FRAMES = 20;
-export const RAIL_FRAMES = 24;
+export const ROAD_FRAMES = 28;
+export const RAIL_FRAMES = 36;
+/** 回廊を端から順に見せるためのタイル間ディレイ */
+export const RAIL_BUILD_STAGGER = 4;
+/** 駅同士の最小間隔（タイル）。これ未満には新駅を置かない */
+export const MIN_STATION_SPACING = 8;
+/** 駅を置くのに必要な近傍建物数（人口密集の代理指標） */
+export const MIN_STATION_URBAN_BUILDINGS = 3;
+/** 密集判定の半径 */
+export const STATION_URBAN_RADIUS = 4;
+
+/** 近傍の建物数（駅以外）。人口密集地の代理 */
+export function countBuildingsNear(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius = STATION_URBAN_RADIUS,
+): number {
+  let n = 0;
+  for (let dy = -radius; dy <= radius; dy++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!inBounds(nx, ny, width, height)) continue;
+      const k = tiles[ny * width + nx]!.kind;
+      if (k === 'station') continue;
+      if (BUILDING_KINDS.has(k)) n += 1;
+    }
+  }
+  return n;
+}
+
+/** 駅を置くに足る人口密集地か */
+export function isUrbanStationSite(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  minBuildings = MIN_STATION_URBAN_BUILDINGS,
+): boolean {
+  return countBuildingsNear(tiles, x, y, width, height) >= minBuildings;
+}
+
+/** 隣接する道路・線路の向きを経路軸に合わせて更新 */
+function stampFacingAlongPath(
+  tiles: Tile[],
+  path: Array<{ x: number; y: number }>,
+  width: number,
+): void {
+  for (let i = 0; i < path.length; i++) {
+    const cur = path[i]!;
+    const prev = i > 0 ? path[i - 1]! : null;
+    const next = i < path.length - 1 ? path[i + 1]! : null;
+    const facing = facingFromPath(prev, cur, next);
+    const t = tiles[cur.y * width + cur.x];
+    if (!t) continue;
+    applyFacing(t, facing);
+  }
+}
+
+/** 単発の道路マス向きを近傍から推定して書き込む */
+function stampRoadFacingAt(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  const t = getTile(tiles, x, y, width, height);
+  if (!t || !isRoadSurface(t.kind)) return;
+  let facing: TileFacing = 'none';
+  for (const n of neighbors4(x, y, width, height)) {
+    const nt = tiles[n.y * width + n.x]!;
+    if (!isRoadSurface(nt.kind)) continue;
+    const axis = axisBetween({ x, y }, n);
+    facing = mergeFacing(facing, axis);
+    applyFacing(nt, axis);
+  }
+  applyFacing(t, facing === 'none' ? 'x' : facing);
+}
 
 type BuildAction =
   | 'residential'
@@ -116,6 +209,7 @@ function findUpgradeTarget(
       const t = getTile(tiles, x, y, width, height);
       if (!t) continue;
       if (!kinds.includes(t.kind)) continue;
+      if (t.kind === 'pad' || t.footprint === 0) continue;
       if (t.tier >= maxTier || t.construction > 0) continue;
       candidates.push({ x, y });
     }
@@ -226,18 +320,86 @@ function canPlaceStationOn(
   return t.kind === 'grass' || t.kind === 'empty' || t.kind === 'forest' || t.kind === 'rail';
 }
 
-/** 終点用: 駅用地にスナップ（道路は拒否） */
+/** 既存駅までの最短距離 */
+function nearestStationDistance(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (let sy = 0; sy < height; sy++) {
+    for (let sx = 0; sx < width; sx++) {
+      if (tiles[sy * width + sx]!.kind !== 'station') continue;
+      const d = Math.hypot(sx - x, sy - y);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+/** 新駅を置けるか（用地 + 間隔 + 人口密集地） */
+function canBuildNewStationAt(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  minSpacing = MIN_STATION_SPACING,
+): boolean {
+  if (!canPlaceStationOn(tiles, x, y, width, height)) return false;
+  if (tiles[y * width + x]!.kind === 'station') return true;
+  if (nearestStationDistance(tiles, x, y, width, height) < minSpacing) return false;
+  // 空地に駅を立てて町を引っ張らない。密集地のみ
+  return isUrbanStationSite(tiles, x, y, width, height);
+}
+
+/** 半径内の既存駅 */
+function findStationWithin(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): { x: number; y: number } | null {
+  let best: { x: number; y: number } | null = null;
+  let bestD = radius;
+  const y0 = Math.max(0, Math.floor(y - radius));
+  const y1 = Math.min(height - 1, Math.ceil(y + radius));
+  const x0 = Math.max(0, Math.floor(x - radius));
+  const x1 = Math.min(width - 1, Math.ceil(x + radius));
+  for (let sy = y0; sy <= y1; sy++) {
+    for (let sx = x0; sx <= x1; sx++) {
+      const tile = tiles[sy * width + sx];
+      if (!tile || tile.kind !== 'station') continue;
+      const d = Math.hypot(sx - x, sy - y);
+      if (d <= bestD) {
+        bestD = d;
+        best = { x: sx, y: sy };
+      }
+    }
+  }
+  return best;
+}
+
+/** 終点用: 駅用地にスナップ（道路は拒否）。近すぎる新駅は避ける */
 function snapStationSite(
   tiles: Tile[],
   p: { x: number; y: number },
   width: number,
   height: number,
 ): { x: number; y: number } | null {
-  if (canPlaceStationOn(tiles, p.x, p.y, width, height)) return p;
-  // 近傍の空き地を探す（道路隣接を優先）
+  // 近くに既存駅があればそれを使う
+  const existing = findStationWithin(tiles, p.x, p.y, width, height, MIN_STATION_SPACING);
+  if (existing) return existing;
+
+  if (canBuildNewStationAt(tiles, p.x, p.y, width, height)) return p;
+  // 近傍の空き地を探す（道路隣接を優先、間隔も守る）
   const neigh = neighbors4(p.x, p.y, width, height);
   const scored = neigh
-    .filter((n) => canPlaceStationOn(tiles, n.x, n.y, width, height))
+    .filter((n) => canBuildNewStationAt(tiles, n.x, n.y, width, height))
     .map((n) => {
       const nearRoad = neighbors4(n.x, n.y, width, height).some((m) =>
         ROAD_LIKE.has(tiles[m.y * width + m.x]!.kind),
@@ -294,7 +456,7 @@ function buildRailCorridor(
   budget: number,
   focus: Settlement | null,
   intercity: { a: { x: number; y: number }; b: { x: number; y: number } } | null,
-): { placed: number; kinds: string[]; cost: number; intercity: boolean } | null {
+): { placed: number; kinds: string[]; cost: number; intercity: boolean; path: Array<{ x: number; y: number }> } | null {
   const cap = spendRoom(budget, balance);
   const existing = collectRailNodes(tiles, width, height);
 
@@ -319,17 +481,27 @@ function buildRailCorridor(
       const t = getTile(tiles, c.x, c.y, width, height)!;
       if (t.kind === 'station') continue;
       if (t.kind === 'rail' || t.kind === 'crossing' || t.kind === 'bridge') {
-        if (needStation && t.kind === 'rail') total += 5; // 線路→駅の昇格
+        if (needStation && t.kind === 'rail') {
+          // 近傍に既存駅があれば昇格しない
+          if (!findStationWithin(tiles, c.x, c.y, width, height, MIN_STATION_SPACING - 0.01)) {
+            total += 5;
+          }
+        }
         continue;
       }
       if (needStation) {
+        // 近傍に既存駅があれば新設コストなし
+        if (findStationWithin(tiles, c.x, c.y, width, height, MIN_STATION_SPACING - 0.01)) {
+          continue;
+        }
         const site =
-          canPlaceStationOn(tiles, c.x, c.y, width, height)
+          canBuildNewStationAt(tiles, c.x, c.y, width, height)
             ? c
             : snapStationSite(tiles, c, width, height);
         if (!site) return null;
         const st = getTile(tiles, site.x, site.y, width, height)!;
         if (st.kind === 'station') continue;
+        if (!canBuildNewStationAt(tiles, site.x, site.y, width, height)) return null;
         const cell = railCellCost(st.kind === 'rail' ? 'grass' : st.kind, true, balance);
         if (!Number.isFinite(cell)) return null;
         total += cell;
@@ -350,49 +522,83 @@ function buildRailCorridor(
     return total;
   };
 
-  const placeCell = (x: number, y: number, asStation: boolean): number => {
+  const placeCell = (
+    x: number,
+    y: number,
+    asStation: boolean,
+    construction = asStation ? CONSTRUCTION_FRAMES : RAIL_FRAMES,
+  ): number => {
     const t = getTile(tiles, x, y, width, height)!;
     if (t.kind === 'rail' || t.kind === 'station' || t.kind === 'crossing' || t.kind === 'bridge') {
       return 0;
     }
-    if (asStation && !canPlaceStationOn(tiles, x, y, width, height)) return -1;
+    if (asStation && !canBuildNewStationAt(tiles, x, y, width, height)) return -1;
     const cellCost = railCellCost(t.kind, asStation, balance);
     if (!Number.isFinite(cellCost)) return -1;
 
     if (asStation) {
-      setTile(tiles, x, y, width, makeTile('station', 1, pickInt(rng, 0, 2), CONSTRUCTION_FRAMES));
+      setTile(
+        tiles,
+        x,
+        y,
+        width,
+        makeTile('station', 1, pickInt(rng, 0, 2), construction, 'both'),
+      );
       return cellCost;
     }
     if (t.kind === 'road') {
-      setTile(tiles, x, y, width, makeTile('crossing', 0, 0, ROAD_FRAMES));
+      setTile(
+        tiles,
+        x,
+        y,
+        width,
+        makeTile('crossing', 0, 0, Math.max(construction, ROAD_FRAMES), 'both'),
+      );
       return cellCost;
     }
     if (!isPaveable(t.kind)) return -1;
     const kind = pavedKind(t.kind, 'rail');
-    setTile(tiles, x, y, width, makeTile(kind, 0, 0, RAIL_FRAMES));
+    setTile(tiles, x, y, width, makeTile(kind, 0, 0, construction, 'x'));
     return cellCost;
   };
 
-  const ensureStationAt = (x: number, y: number): number => {
+  const ensureStationAt = (x: number, y: number, construction = CONSTRUCTION_FRAMES): number => {
     const t = getTile(tiles, x, y, width, height);
     if (!t) return -1;
     if (t.kind === 'station') return 0;
-    if (canPlaceStationOn(tiles, x, y, width, height)) {
+    // 近傍に既存駅があれば新設しない（間隔を保つ）
+    if (findStationWithin(tiles, x, y, width, height, MIN_STATION_SPACING - 0.01)) {
+      return 0;
+    }
+    if (canBuildNewStationAt(tiles, x, y, width, height)) {
       if (t.kind === 'rail') {
-        setTile(tiles, x, y, width, makeTile('station', 1, pickInt(rng, 0, 2), CONSTRUCTION_FRAMES));
+        setTile(
+          tiles,
+          x,
+          y,
+          width,
+          makeTile('station', 1, pickInt(rng, 0, 2), construction, mergeFacing(t.facing, 'both')),
+        );
         return 5;
       }
-      return placeCell(x, y, true);
+      return placeCell(x, y, true, construction);
     }
     const site = snapStationSite(tiles, { x, y }, width, height);
     if (!site) return -1;
     const st = getTile(tiles, site.x, site.y, width, height)!;
     if (st.kind === 'station') return 0;
+    if (!canBuildNewStationAt(tiles, site.x, site.y, width, height)) return -1;
     if (st.kind === 'rail') {
-      setTile(tiles, site.x, site.y, width, makeTile('station', 1, pickInt(rng, 0, 2), CONSTRUCTION_FRAMES));
+      setTile(
+        tiles,
+        site.x,
+        site.y,
+        width,
+        makeTile('station', 1, pickInt(rng, 0, 2), construction, mergeFacing(st.facing, 'both')),
+      );
       return 5;
     }
-    return placeCell(site.x, site.y, true);
+    return placeCell(site.x, site.y, true, construction);
   };
 
   /** 見積もり OK なら一括敷設。条件を満たせなければロールバックして何も置かない */
@@ -400,7 +606,7 @@ function buildRailCorridor(
     path: Array<{ x: number; y: number }>,
     stationMode: 'both' | 'goal',
     intercityFlag: boolean,
-  ): { placed: number; kinds: string[]; cost: number; intercity: boolean } | null => {
+  ): { placed: number; kinds: string[]; cost: number; intercity: boolean; path: Array<{ x: number; y: number }> } | null => {
     const est = estimatePath(path, stationMode);
     if (est == null || est > cap) return null;
 
@@ -430,13 +636,14 @@ function buildRailCorridor(
         (stationMode === 'both' && (isStart || isGoal)) ||
         (stationMode === 'goal' && isGoal);
       const t = getTile(tiles, c.x, c.y, width, height)!;
+      const buildFrames = RAIL_FRAMES + i * RAIL_BUILD_STAGGER;
 
       if (needStation) {
         if (t.kind === 'station') {
           kinds.push('station');
           continue;
         }
-        const spent = ensureStationAt(c.x, c.y);
+        const spent = ensureStationAt(c.x, c.y, Math.max(buildFrames, CONSTRUCTION_FRAMES));
         if (spent < 0) {
           ok = false;
           break;
@@ -455,7 +662,7 @@ function buildRailCorridor(
       ) {
         continue;
       }
-      const spent = placeCell(c.x, c.y, false);
+      const spent = placeCell(c.x, c.y, false, buildFrames);
       if (spent < 0) {
         ok = false;
         break;
@@ -467,6 +674,7 @@ function buildRailCorridor(
     }
 
     if (ok) {
+      stampFacingAlongPath(tiles, path, width);
       const hasStationNear = (x: number, y: number) => {
         const here = getTile(tiles, x, y, width, height);
         if (here?.kind === 'station') return true;
@@ -498,6 +706,7 @@ function buildRailCorridor(
       kinds: [...new Set(kinds)],
       cost,
       intercity: intercityFlag,
+      path,
     };
   };
 
@@ -507,7 +716,7 @@ function buildRailCorridor(
     maxLen: number,
     stationMode: 'both' | 'goal',
     intercityFlag: boolean,
-  ): { placed: number; kinds: string[]; cost: number; intercity: boolean } | null => {
+  ): { placed: number; kinds: string[]; cost: number; intercity: boolean; path: Array<{ x: number; y: number }> } | null => {
     let start = a;
     let goal = b;
     if (stationMode === 'both') {
@@ -544,9 +753,9 @@ function buildRailCorridor(
     const cx = focus?.cx ?? Math.floor(width / 2);
     const cy = focus?.cy ?? Math.floor(height / 2);
     const sites: Array<{ x: number; y: number }> = [];
-    for (let y = cy - 8; y <= cy + 8; y++) {
-      for (let x = cx - 10; x <= cx + 10; x++) {
-        if (!canPlaceStationOn(tiles, x, y, width, height)) continue;
+    for (let y = cy - 12; y <= cy + 12; y++) {
+      for (let x = cx - 14; x <= cx + 14; x++) {
+        if (!canBuildNewStationAt(tiles, x, y, width, height)) continue;
         const nearRoad = neighbors4(x, y, width, height).some((n) =>
           ROAD_LIKE.has(tiles[n.y * width + n.x]!.kind),
         );
@@ -555,12 +764,12 @@ function buildRailCorridor(
       }
     }
     if (sites.length < 2) return null;
-    for (let attempt = 0; attempt < 24; attempt++) {
+    for (let attempt = 0; attempt < 40; attempt++) {
       const a = sites[pickInt(rng, 0, sites.length - 1)]!;
       const b = sites[pickInt(rng, 0, sites.length - 1)]!;
       const d = Math.hypot(a.x - b.x, a.y - b.y);
-      if (d < 6 || d > 14) continue;
-      const r = tryConnect(a, b, 40, 'both', false);
+      if (d < MIN_STATION_SPACING || d > 22) continue;
+      const r = tryConnect(a, b, 48, 'both', false);
       if (r) return r;
     }
     return null;
@@ -588,7 +797,7 @@ function buildRailCorridor(
     if (e.x === start.x && e.y === start.y) continue;
     if (tiles[e.y * width + e.x]!.kind !== 'station') continue;
     const dist = Math.hypot(e.x - start.x, e.y - start.y);
-    if (dist >= 5 && dist <= 40) stationTargets.push(e);
+    if (dist >= MIN_STATION_SPACING && dist <= 40) stationTargets.push(e);
   }
 
   const scanR = focus ? Math.ceil(focus.radius) + 16 : 22;
@@ -598,22 +807,26 @@ function buildRailCorridor(
   const sx1 = Math.min(width - 3, (focus?.cx ?? start.x) + scanR);
   for (let y = sy0; y <= sy1; y++) {
     for (let x = sx0; x <= sx1; x++) {
-      if (!canPlaceStationOn(tiles, x, y, width, height)) continue;
-      if (tiles[y * width + x]!.kind === 'station') continue;
+      if (!canBuildNewStationAt(tiles, x, y, width, height)) continue;
       const nearRoad = neighbors4(x, y, width, height).some((n) =>
         ROAD_LIKE.has(tiles[n.y * width + n.x]!.kind),
       );
       if (!nearRoad) continue;
       const dist = Math.hypot(x - start.x, y - start.y);
-      if (dist < 5 || dist > 24) continue;
+      if (dist < MIN_STATION_SPACING || dist > 28) continue;
       stationTargets.push({ x, y });
     }
   }
 
-  stationTargets.sort(
-    (a, b) =>
-      Math.hypot(a.x - start.x, a.y - start.y) - Math.hypot(b.x - start.x, b.y - start.y),
-  );
+  stationTargets.sort((a, b) => {
+    const dens =
+      countBuildingsNear(tiles, b.x, b.y, width, height) -
+      countBuildingsNear(tiles, a.x, a.y, width, height);
+    if (dens !== 0) return dens;
+    return (
+      Math.hypot(a.x - start.x, a.y - start.y) - Math.hypot(b.x - start.x, b.y - start.y)
+    );
+  });
 
   const pool = stationTargets.slice(0, Math.min(10, stationTargets.length));
   for (let i = 0; i < pool.length; i++) {
@@ -646,21 +859,20 @@ function findStationSpot(
       const t = getTile(tiles, x, y, width, height);
       if (!t) continue;
       if (t.kind === 'station') continue;
-      // 駅は道路上に建てない
-      if (!canPlaceStationOn(tiles, x, y, width, height)) continue;
+      if (!canBuildNewStationAt(tiles, x, y, width, height)) continue;
 
       const onRail = t.kind === 'rail';
       const nearRail = neighbors4(x, y, width, height).some((n) => {
         const nt = tiles[n.y * width + n.x]!;
         return nt.kind === 'rail' || nt.kind === 'crossing' || nt.kind === 'station';
       });
-      const nearRoad = adjacentToRoad(tiles, x, y, width, height);
-      // レール上、またはレール隣接、または道路隣接の空き地
-      if (!onRail && !nearRail && !nearRoad) continue;
+      // 既存路線の利便性向上が主目的。線路から離れた空地には建てない
+      if (!onRail && !nearRail) continue;
 
+      const density = countBuildingsNear(tiles, x, y, width, height);
       const score =
-        (onRail ? 3 : nearRail ? 2 : 1) +
-        (nearRoad ? 2 : 0) +
+        density * 1.5 +
+        (onRail ? 4 : nearRail ? 2.5 : 0) +
         settlementBiasScore(x, y, focus) +
         rng() * 0.3;
       candidates.push({ x, y, score });
@@ -684,7 +896,200 @@ function placeBuilding(
   if (!inBounds(x, y, width, height)) return false;
   const t = getTile(tiles, x, y, width, height);
   if (!t || !isBuildable(t.kind)) return false;
-  setTile(tiles, x, y, width, makeTile(kind, tier, pickInt(rng, 0, 3), CONSTRUCTION_FRAMES));
+  setTile(tiles, x, y, width, makeTile(kind, tier, pickInt(rng, 0, 7), CONSTRUCTION_FRAMES));
+  return true;
+}
+
+/**
+ * 地価スコア 0〜1。
+ * 周辺密度・高級用途・街レベル・人口・予算から緩やかに上がる。
+ * stage（グローバルネットワーク段階）ではなく、街単体の level を使う。
+ */
+export function landValueScore(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  level: SettlementLevel,
+  stats: CityStats,
+  balance: BalanceConfig = DEFAULT_BALANCE,
+): number {
+  const density = countBuildingsNear(tiles, x, y, width, height, 4);
+  const densityScore = Math.min(1, density / 16);
+
+  let premium = 0;
+  for (let dy = -3; dy <= 3; dy++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      const t = getTile(tiles, x + dx, y + dy, width, height);
+      if (!t) continue;
+      if (t.kind === 'commercial') premium += 0.025;
+      else if (t.kind === 'tower') premium += 0.05;
+      else if (t.kind === 'skyscraper') premium += 0.07;
+      else if (t.kind === 'plaza' || t.kind === 'station') premium += 0.02;
+    }
+  }
+  premium = Math.min(1, premium);
+
+  const levelScore =
+    level === 'metropolis' ? 0.5 : level === 'city' ? 0.28 : level === 'town' ? 0.1 : 0;
+
+  const metro = Math.max(1, balance.stages.metropolis);
+  const popScore = Math.min(1, stats.population / (metro * 1.5));
+  const budgetScore = Math.min(0.15, Math.max(0, stats.budget) / 2500);
+
+  return (
+    densityScore * 0.38 +
+    premium * 0.22 +
+    levelScore * 0.22 +
+    popScore * 0.13 +
+    budgetScore * 0.05
+  );
+}
+
+/** 塔向け: 街レベルが city 以上で中程度の地価 */
+export function isMediumLandValue(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  level: SettlementLevel,
+  stats: CityStats,
+  balance: BalanceConfig = DEFAULT_BALANCE,
+): boolean {
+  if (level !== 'city' && level !== 'metropolis') return false;
+  if (stats.population < balance.stages.city * 0.85) return false;
+  return landValueScore(tiles, x, y, width, height, level, stats, balance) >= 0.48;
+}
+
+/** 超高層（1タイル）向け: 街レベルが metropolis + 高地価 */
+export function isHighLandValue(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  level: SettlementLevel,
+  stats: CityStats,
+  balance: BalanceConfig = DEFAULT_BALANCE,
+): boolean {
+  if (level !== 'metropolis') return false;
+  if (stats.population < balance.stages.metropolis) return false;
+  if (stats.budget < 80) return false;
+  return landValueScore(tiles, x, y, width, height, level, stats, balance) >= 0.68;
+}
+
+/** 2x2 超高層向け: さらに人口・地価が乗ってから */
+export function isPremiumLandValue(
+  tiles: Tile[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  level: SettlementLevel,
+  stats: CityStats,
+  balance: BalanceConfig = DEFAULT_BALANCE,
+): boolean {
+  if (level !== 'metropolis') return false;
+  if (stats.population < balance.stages.metropolis * 1.25) return false;
+  if (stats.budget < 150) return false;
+  return landValueScore(tiles, x, y, width, height, level, stats, balance) >= 0.74;
+}
+
+/** 2x2 空き（建設可・道路隣接・逃げ道を塞がない）を探す */
+export function findFootprint2x2NearRoad(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  rng: () => number,
+  focus: Settlement | null,
+  level: SettlementLevel,
+  stats: CityStats,
+  landCheck: 'high' | 'premium' = 'premium',
+  balance: BalanceConfig = DEFAULT_BALANCE,
+): { x: number; y: number } | null {
+  const candidates: Array<{ x: number; y: number; score: number }> = [];
+  const cx = focus?.cx ?? width / 2;
+  const cy = focus?.cy ?? height / 2;
+  const scanR = focus ? Math.ceil(focus.radius) + 14 : Math.min(width, height);
+
+  const y0 = Math.max(0, cy - scanR);
+  const y1 = Math.min(height - 2, cy + scanR);
+  const x0 = Math.max(0, cx - scanR);
+  const x1 = Math.min(width - 2, cx + scanR);
+
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if (!isFootprint2x2Clear(tiles, x, y, width, height)) continue;
+      if (!footprint2x2TouchesRoad(tiles, x, y, width, height)) continue;
+      const ok =
+        landCheck === 'premium'
+          ? isPremiumLandValue(tiles, x, y, width, height, level, stats, balance)
+          : isHighLandValue(tiles, x, y, width, height, level, stats, balance);
+      if (!ok) continue;
+
+      let blocksEscape = false;
+      for (const [dx, dy] of FOOTPRINT_2X2) {
+        if (isLastEscapeForBuilding(tiles, x + dx, y + dy, width, height)) {
+          blocksEscape = true;
+          break;
+        }
+      }
+      if (blocksEscape) continue;
+
+      const dist = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+      const density = countBuildingsNear(tiles, x, y, width, height, 3);
+      const lv = landValueScore(tiles, x, y, width, height, level, stats, balance);
+      candidates.push({
+        x,
+        y,
+        score: density * 0.08 + lv * 3 - dist * 0.08 + settlementBiasScore(x, y, focus) + rng() * 0.25,
+      });
+    }
+  }
+
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => b.score - a.score);
+  const top = candidates.slice(0, Math.min(8, candidates.length));
+  return top[pickInt(rng, 0, top.length - 1)]!;
+}
+
+/** 2x2 高層を配置。アンカーに kind、他3マスは pad */
+export function placeFootprint2x2(
+  tiles: Tile[],
+  width: number,
+  height: number,
+  ax: number,
+  ay: number,
+  kind: TileKind,
+  tier: number,
+  rng: () => number,
+): boolean {
+  if (!isFootprint2x2Clear(tiles, ax, ay, width, height)) return false;
+  const variant = pickInt(rng, 0, 7);
+  const anchorIndex = idx(ax, ay, width);
+  for (const [dx, dy] of FOOTPRINT_2X2) {
+    const x = ax + dx;
+    const y = ay + dy;
+    if (dx === 0 && dy === 0) {
+      setTile(
+        tiles,
+        x,
+        y,
+        width,
+        makeTile(kind, tier, variant, CONSTRUCTION_FRAMES, 'none', 2, -1),
+      );
+    } else {
+      setTile(
+        tiles,
+        x,
+        y,
+        width,
+        makeTile('pad', 0, variant, CONSTRUCTION_FRAMES, 'none', 0, anchorIndex),
+      );
+    }
+  }
   return true;
 }
 
@@ -694,30 +1099,35 @@ function needsToWeights(
   roadBlocked: boolean,
   multiSettlement: boolean,
 ): Array<{ key: BuildAction; w: number }> {
+  // 都市間鉄道は大都会寄り。町段階ではほぼ狙わない
   const intercityBoost = multiSettlement
-    ? stage === 'town'
+    ? stage === 'metropolis'
       ? 0.35
       : stage === 'city'
-        ? 0.7
-        : stage === 'metropolis'
-          ? 0.9
-          : 0
+        ? 0.12
+        : 0
     : 0;
   const w: Array<{ key: BuildAction; w: number }> = [
     { key: 'residential', w: need.residential },
     { key: 'commercial', w: need.commercial },
     { key: 'industrial', w: need.industrial },
-    { key: 'road', w: need.road + (roadBlocked ? 1.2 : 0) + (multiSettlement ? 0.25 : 0) },
+    { key: 'road', w: need.road + (roadBlocked ? 1.4 : 0) + (multiSettlement ? 0.35 : 0) },
     { key: 'rail', w: need.rail + intercityBoost },
     { key: 'school', w: need.school },
     { key: 'park', w: need.park },
     { key: 'hospital', w: need.hospital },
     { key: 'tower', w: need.tower },
-    { key: 'station', w: need.station + intercityBoost * 0.4 },
-    { key: 'plaza', w: stage === 'city' || stage === 'metropolis' ? 0.25 : 0.05 },
-    { key: 'upgrade', w: stage === 'town' ? 0.4 : stage === 'city' ? 0.7 : stage === 'metropolis' ? 1.0 : 0.1 },
+    { key: 'station', w: need.station },
+    {
+      key: 'plaza',
+      w: stage === 'city' ? 0.3 : stage === 'metropolis' ? 0.45 : 0.05,
+    },
+    {
+      key: 'upgrade',
+      w: stage === 'town' ? 0.55 : stage === 'city' ? 0.95 : stage === 'metropolis' ? 1.4 : 0.15,
+    },
     { key: 'skyscraper', w: need.skyscraper },
-    { key: 'demolish', w: roadBlocked ? 1.8 : 0.05 },
+    { key: 'demolish', w: roadBlocked ? 2.0 : 0.05 },
   ];
   return w;
 }
@@ -726,6 +1136,8 @@ export interface BuildResult {
   built: boolean;
   kind?: string;
   cost: number;
+  /** 線路コリドーを敷いたとき、その経路（電車スポーン用） */
+  trainPath?: Array<{ x: number; y: number }>;
 }
 
 /** 1 回の建設試行（集落フォーカス付き） */
@@ -742,9 +1154,14 @@ export function tryBuild(
 ): BuildResult {
   const rng = createRng((seed ^ (day * 2654435761)) >>> 0);
   const costs = balance.buildCosts;
-  const need = computeBuildNeeds(stats, stage, balance);
-  const roadBlocked = isRoadGrowthBlocked(tiles, width, height);
   const focus = pickSettlement(settlements, tiles, width, height, rng);
+
+  // 街の都会度: フォーカス集落の level を使い、グローバル stage とは分ける。
+  // 集落が未定またはレベル未設定のときはグローバル stage で代替。
+  const focusLevel: SettlementLevel = focus?.level ?? stage;
+
+  const need = computeBuildNeeds(stats, stage, focusLevel, balance);
+  const roadBlocked = isRoadGrowthBlocked(tiles, width, height);
   const multi = settlements.length >= 2;
   const action = weightedPick(rng, needsToWeights(need, stage, roadBlocked, multi));
 
@@ -759,7 +1176,8 @@ export function tryBuild(
     if (target) {
       const demolishCost = Math.round(costs.road * 1.5);
       if (canAfford(stats.budget, demolishCost, balance)) {
-        setTile(tiles, target.x, target.y, width, makeTile('road', 0, 0, ROAD_FRAMES));
+        setTile(tiles, target.x, target.y, width, makeTile('road', 0, 0, ROAD_FRAMES, 'x'));
+        stampRoadFacingAt(tiles, target.x, target.y, width, height);
         return { built: true, kind: 'demolish', cost: demolishCost };
       }
     }
@@ -767,7 +1185,8 @@ export function tryBuild(
   }
 
   if (action === 'upgrade') {
-    const maxTier = stage === 'metropolis' ? 5 : stage === 'city' ? 4 : 3;
+    // アップグレード上限は街レベルで決める（グローバル stage ではなく局所密度）
+    const maxTier = focusLevel === 'metropolis' ? 5 : focusLevel === 'city' ? 4 : 3;
     const target = findUpgradeTarget(
       tiles,
       width,
@@ -778,10 +1197,18 @@ export function tryBuild(
     );
     if (!target) return { built: false, cost: 0 };
     const t = getTile(tiles, target.x, target.y, width, height)!;
-    const cost = costs.upgradeBase * (t.tier + 1);
+    const cost = costs.upgradeBase * (t.tier + 1) * (t.footprint >= 2 ? 2 : 1);
     if (!canAfford(stats.budget, cost, balance)) return { built: false, cost: 0 };
     t.tier += 1;
     t.construction = UPGRADE_FRAMES;
+    // 2x2 の pad も建設アニメを同期
+    if (t.footprint >= 2) {
+      for (const [dx, dy] of FOOTPRINT_2X2) {
+        if (dx === 0 && dy === 0) continue;
+        const pad = getTile(tiles, target.x + dx, target.y + dy, width, height);
+        if (pad && pad.kind === 'pad') pad.construction = UPGRADE_FRAMES;
+      }
+    }
     return { built: true, kind: 'upgrade', cost };
   }
 
@@ -800,7 +1227,8 @@ export function tryBuild(
       if (!target) return { built: false, cost: 0 };
       const demolishCost = Math.round(costs.road * 1.5);
       if (!canAfford(stats.budget, demolishCost, balance)) return { built: false, cost: 0 };
-      setTile(tiles, target.x, target.y, width, makeTile('road', 0, 0, ROAD_FRAMES));
+      setTile(tiles, target.x, target.y, width, makeTile('road', 0, 0, ROAD_FRAMES, 'x'));
+      stampRoadFacingAt(tiles, target.x, target.y, width, height);
       return { built: true, kind: 'demolish', cost: demolishCost };
     }
     const under = getTile(tiles, spot.x, spot.y, width, height)!;
@@ -808,7 +1236,8 @@ export function tryBuild(
     const total = costs.road + (Number.isFinite(surcharge) ? surcharge : 0);
     if (!canAfford(stats.budget, total, balance)) return { built: false, cost: 0 };
     const kind = pavedKind(under.kind, 'road');
-    setTile(tiles, spot.x, spot.y, width, makeTile(kind, 0, 0, ROAD_FRAMES));
+    setTile(tiles, spot.x, spot.y, width, makeTile(kind, 0, 0, ROAD_FRAMES, 'x'));
+    stampRoadFacingAt(tiles, spot.x, spot.y, width, height);
     return { built: true, kind, cost: total };
   }
 
@@ -837,7 +1266,12 @@ export function tryBuild(
           : corridor.kinds.includes('crossing')
             ? 'crossing'
             : 'rail';
-    return { built: true, kind: label, cost: corridor.cost };
+    return {
+      built: true,
+      kind: label,
+      cost: corridor.cost,
+      trainPath: corridor.path.length >= 2 ? corridor.path : undefined,
+    };
   }
 
   if (action === 'station') {
@@ -854,11 +1288,16 @@ export function tryBuild(
         null,
       );
       if (!corridor) return { built: false, cost: 0 };
-      return { built: true, kind: 'station', cost: corridor.cost };
+      return {
+        built: true,
+        kind: 'station',
+        cost: corridor.cost,
+        trainPath: corridor.path.length >= 2 ? corridor.path : undefined,
+      };
     }
     // 駅は道路上に建てない（findStationSpot が保証）
     const t = getTile(tiles, spot.x, spot.y, width, height)!;
-    if (!canPlaceStationOn(tiles, spot.x, spot.y, width, height)) {
+    if (!canBuildNewStationAt(tiles, spot.x, spot.y, width, height)) {
       return { built: false, cost: 0 };
     }
     const surcharge = terrainBuildSurcharge(
@@ -873,7 +1312,13 @@ export function tryBuild(
       spot.x,
       spot.y,
       width,
-      makeTile('station', 1, pickInt(rng, 0, 2), CONSTRUCTION_FRAMES),
+      makeTile(
+        'station',
+        1,
+        pickInt(rng, 0, 2),
+        CONSTRUCTION_FRAMES,
+        mergeFacing(t.facing === 'none' ? 'x' : t.facing, 'both'),
+      ),
     );
     return { built: true, kind: 'station', cost: total };
   }
@@ -887,7 +1332,8 @@ export function tryBuild(
       const total = costs.road + (Number.isFinite(surcharge) ? surcharge : 0);
       if (canAfford(stats.budget, total, balance)) {
         const kind = pavedKind(under.kind, 'road');
-        setTile(tiles, roadSpot.x, roadSpot.y, width, makeTile(kind, 0, 0, ROAD_FRAMES));
+        setTile(tiles, roadSpot.x, roadSpot.y, width, makeTile(kind, 0, 0, ROAD_FRAMES, 'x'));
+        stampRoadFacingAt(tiles, roadSpot.x, roadSpot.y, width, height);
         return { built: true, kind, cost: total };
       }
     }
@@ -900,7 +1346,8 @@ export function tryBuild(
     );
     const demolishCost = Math.round(costs.road * 1.5);
     if (target && canAfford(stats.budget, demolishCost, balance)) {
-      setTile(tiles, target.x, target.y, width, makeTile('road', 0, 0, ROAD_FRAMES));
+      setTile(tiles, target.x, target.y, width, makeTile('road', 0, 0, ROAD_FRAMES, 'x'));
+      stampRoadFacingAt(tiles, target.x, target.y, width, height);
       return { built: true, kind: 'demolish', cost: demolishCost };
     }
     return { built: false, cost: 0 };
@@ -908,6 +1355,57 @@ export function tryBuild(
 
   const kind = action as TileKind;
   const tier = action === 'skyscraper' || action === 'tower' ? 2 : 1;
+
+  // 地価が高いエリアでは超高層・塔を 2x2 で試行（街レベルで判定）
+  const want2x2 =
+    (action === 'skyscraper' && focusLevel === 'metropolis') ||
+    (action === 'tower' && focusLevel === 'metropolis');
+  if (want2x2) {
+    const spot2 = findFootprint2x2NearRoad(
+      tiles,
+      width,
+      height,
+      rng,
+      focus,
+      focusLevel,
+      stats,
+      action === 'skyscraper' ? 'premium' : 'high',
+      balance,
+    );
+    if (spot2) {
+      const under2 = getTile(tiles, spot2.x, spot2.y, width, height)!;
+      const surcharge2 = terrainBuildSurcharge(under2.kind, 'building', balance);
+      if (Number.isFinite(surcharge2)) {
+        const total2 = Math.round(baseCost * 2.4) + surcharge2;
+        if (
+          canAfford(stats.budget, total2, balance) &&
+          placeFootprint2x2(tiles, width, height, spot2.x, spot2.y, kind, tier, rng)
+        ) {
+          return {
+            built: true,
+            kind: action === 'skyscraper' ? 'skyscraper-2x2' : 'tower-2x2',
+            cost: total2,
+          };
+        }
+      }
+    }
+  }
+
+  // 1タイルの塔・超高層も地価ゲート（街レベルで判定）
+  if (action === 'skyscraper') {
+    if (
+      !isHighLandValue(tiles, spot.x, spot.y, width, height, focusLevel, stats, balance)
+    ) {
+      return { built: false, cost: 0 };
+    }
+  } else if (action === 'tower') {
+    if (
+      !isMediumLandValue(tiles, spot.x, spot.y, width, height, focusLevel, stats, balance)
+    ) {
+      return { built: false, cost: 0 };
+    }
+  }
+
   const under = getTile(tiles, spot.x, spot.y, width, height)!;
   const surcharge = terrainBuildSurcharge(under.kind, 'building', balance);
   if (!Number.isFinite(surcharge)) return { built: false, cost: 0 };

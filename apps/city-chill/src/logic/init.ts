@@ -16,27 +16,31 @@ export function createInitialCity(
   const tiles = generateTerrain(width, height, seed, balance.terrain);
   const settlements = seedSettlements(tiles, width, height, rng);
 
-  // 集落数に応じて初期人口・予算を少し増やす
-  const villageCount = Math.max(1, settlements.length);
-  const initialPop = balance.population.initial * villageCount;
-  const initialBudget = balance.budget.initial + (villageCount - 1) * 80;
-
+  // 初期人口・予算は実際の住宅キャパに合わせる（集落規模のばらつきを反映）
   const baseStats = {
-    population: initialPop,
+    population: balance.population.initial,
     housing: 0,
     jobs: 0,
     transport: 0,
     education: 10,
     happiness: 55,
-    budget: initialBudget,
+    budget: balance.budget.initial,
     industry: 0,
     commerce: 0,
     day: 0,
   };
 
   const stats = recomputeStats(tiles, baseStats, balance);
-  stats.population = initialPop;
-  stats.budget = initialBudget;
+  const fromHousing = Math.round(stats.housing * 0.62);
+  const villageCount = Math.max(1, settlements.length);
+  stats.population = Math.max(
+    balance.population.initial,
+    fromHousing + (villageCount - 1) * 4,
+  );
+  stats.budget =
+    balance.budget.initial +
+    Math.round(stats.housing * 0.9) +
+    (villageCount - 1) * 40;
 
   return {
     width,
@@ -44,7 +48,7 @@ export function createInitialCity(
     tiles,
     stats,
     vehicles: [],
-    stage: stageFromPopulation(initialPop, balance),
+    stage: stageFromPopulation(stats.population, balance),
     buildCooldown: 0.8,
     nextVehicleId: 1,
     seed,

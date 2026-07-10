@@ -4,7 +4,7 @@ import { createCityRenderer3D } from './scene/renderer3d';
 import { renderHudShell, updateHudControls, updateHudStats } from './hud';
 
 const SPEEDS = [1, 2, 4];
-const MAP_SIZE = 256;
+const MAP_SIZE = 128;
 /** ベースの 1 日あたり秒数 (大きいほどゆっくり) */
 const SECONDS_PER_DAY = 2.8;
 
@@ -101,9 +101,11 @@ export function mountApp(root: HTMLElement): void {
     park: '公園が整備された',
     hospital: '病院が完成',
     tower: '高層マンションが建った',
+    'tower-2x2': '大型タワーが街区を占めた',
     station: '駅が開業',
     plaza: '広場ができた',
     skyscraper: '超高層ビルがそびえる',
+    'skyscraper-2x2': '巨大な超高層が街区に建った',
     demolish: '再開発で道路を通した',
     upgrade: '建物がグレードアップ',
     merge: '近くの町がひとつになった',

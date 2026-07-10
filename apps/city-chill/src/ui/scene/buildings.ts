@@ -356,6 +356,7 @@ export function createBuildingMesh(tile: Tile, time: number): THREE.Group | null
     construction: tile.construction,
     variant: tile.variant,
     footprint: tile.footprint,
+    animated: false,
   };
 
   if (kind === 'park') {
@@ -365,6 +366,7 @@ export function createBuildingMesh(tile: Tile, time: number): THREE.Group | null
       tree.userData.sway = i + tile.variant;
       group.add(tree);
     }
+    group.userData.animated = true;
     return group;
   }
 
@@ -467,6 +469,7 @@ export function createBuildingMesh(tile: Tile, time: number): THREE.Group | null
     }
     group.add(makeScaffold(w, Math.max(h, 0.4), d, time, tile.variant, progress));
     group.userData.buildingProgress = progress;
+    group.userData.animated = true;
     return group;
   }
 
@@ -574,6 +577,7 @@ export function createBuildingMesh(tile: Tile, time: number): THREE.Group | null
         smoke.userData.smoke = i;
         group.add(smoke);
       }
+      group.userData.animated = true;
     }
     // のこぎり屋根
     if (tile.variant % 3 === 0) {
@@ -598,6 +602,7 @@ export function createBuildingMesh(tile: Tile, time: number): THREE.Group | null
     beacon.position.y = h + antennaH + 0.04;
     beacon.userData.beacon = true;
     group.add(beacon);
+    group.userData.animated = true;
     // 屋上機械室
     if (tile.variant % 2 === 0) {
       const mech = box(w * 0.25, 0.12, d * 0.2, mat('mech', 0x8090a0, { metalness: 0.3 }), h + 0.06);

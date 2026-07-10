@@ -1,6 +1,6 @@
 import type { CityState, SimConfig } from '../types';
 import { DEFAULT_BALANCE, mergeBalance, type BalanceConfig, type DeepPartial } from './balance';
-import { tickConstruction, tryBuild } from './growth';
+import { collectConstructionIndices, tickConstruction, tryBuild } from './growth';
 import { createInitialCity } from './init';
 import { createRng } from './rng';
 import {
@@ -32,6 +32,8 @@ export interface TickResult {
 /**
  * シミュレーションを dt 秒進める。
  * 建設・人口は buildCooldown 間隔、車両・建設アニメは毎フレーム。
+ *
+ * 状態はインプレース更新する（毎フレームの全タイル複製を避ける）。
  */
 export function tickSimulation(
   state: CityState,
@@ -40,86 +42,87 @@ export function tickSimulation(
   balance: BalanceConfig = DEFAULT_BALANCE,
 ): TickResult {
   const events: string[] = [];
-  const next: CityState = {
-    ...state,
-    tiles: state.tiles.map((t) => ({ ...t })),
-    stats: { ...state.stats },
-    settlements: state.settlements.map((s) => ({ ...s })),
-    vehicles: state.vehicles.map((v) => ({
-      ...v,
-      path: v.path.map((p) => ({ ...p })),
-      destination: { ...v.destination },
-      carPoses: v.carPoses?.map((p) => ({ ...p })),
-    })),
-  };
 
-  tickConstruction(next.tiles);
-  updateVehicles(next.vehicles, dt, {
-    tiles: next.tiles,
-    width: next.width,
-    height: next.height,
-    seed: next.seed,
-    day: next.stats.day,
+  const cons = tickConstruction(state.tiles, state.constructionIndices);
+  state.constructionIndices = cons.indices;
+  if (cons.visualChanged) {
+    state.visualRevision += 1;
+  }
+
+  updateVehicles(state.vehicles, dt, {
+    tiles: state.tiles,
+    width: state.width,
+    height: state.height,
+    seed: state.seed,
+    day: state.stats.day,
   });
 
-  next.buildCooldown -= dt;
+  state.buildCooldown -= dt;
 
   const bi = balance.buildInterval;
   const buildInterval = Math.max(bi.minSeconds, secondsPerDay * bi.dayFactor);
-  if (next.buildCooldown <= 0) {
-    const jitterRng = createRng((next.seed ^ (next.stats.day * 374761393) ^ 0x9e3779b9) >>> 0);
-    next.buildCooldown = buildInterval * (bi.jitterMin + jitterRng() * bi.jitterRange);
+  if (state.buildCooldown <= 0) {
+    const jitterRng = createRng((state.seed ^ (state.stats.day * 374761393) ^ 0x9e3779b9) >>> 0);
+    state.buildCooldown = buildInterval * (bi.jitterMin + jitterRng() * bi.jitterRange);
 
     // 余剰予算があるほど1日に複数建設して街を広げる
     const bursts =
-      next.stats.budget > 320 ? 4 : next.stats.budget > 180 ? 3 : next.stats.budget > 90 ? 2 : 1;
+      state.stats.budget > 320 ? 4 : state.stats.budget > 180 ? 3 : state.stats.budget > 90 ? 2 : 1;
 
+    let builtSomething = false;
     for (let b = 0; b < bursts; b++) {
       const result = tryBuild(
-        next.tiles,
-        next.width,
-        next.height,
-        next.stats,
-        next.stage,
-        next.seed,
-        next.stats.day * 17 + b,
+        state.tiles,
+        state.width,
+        state.height,
+        state.stats,
+        state.stage,
+        state.seed,
+        state.stats.day * 17 + b,
         balance,
-        next.settlements,
+        state.settlements,
       );
       if (!result.built || !result.kind) break;
-      next.stats.budget -= result.cost;
+      builtSomething = true;
+      state.stats.budget -= result.cost;
       events.push(result.kind);
       if (result.trainPath && result.trainPath.length >= 2) {
         const trainRng = createRng(
-          (next.seed ^ (next.stats.day * 2654435761) ^ (b * 0x85ebca6b)) >>> 0,
+          (state.seed ^ (state.stats.day * 2654435761) ^ (b * 0x85ebca6b)) >>> 0,
         );
         const train = createTrainOnPath(
           result.trainPath,
-          next.nextVehicleId,
+          state.nextVehicleId,
           trainRng,
         );
         if (train) {
-          next.vehicles.push(train);
-          next.nextVehicleId = train.id + 1;
+          state.vehicles.push(train);
+          state.nextVehicleId = train.id + 1;
         }
       }
       // 借金が深すぎたらその日は打ち切り
-      if (next.stats.budget + balance.budget.debtLimit < 40) break;
+      if (state.stats.budget + balance.budget.debtLimit < 40) break;
     }
 
-    next.stats.day += 1;
-    next.stats = recomputeStats(next.tiles, next.stats, balance);
-    next.stats.population = growPopulation(next.stats, balance);
-    next.stage = stageFromPopulation(next.stats.population, balance);
+    if (builtSomething) {
+      state.mapRevision += 1;
+      state.visualRevision += 1;
+      state.constructionIndices = collectConstructionIndices(state.tiles);
+    }
+
+    state.stats.day += 1;
+    state.stats = recomputeStats(state.tiles, state.stats, balance);
+    state.stats.population = growPopulation(state.stats, balance);
+    state.stage = stageFromPopulation(state.stats.population, balance);
 
     // 集落の重心更新と合体判定（数日おきで十分）
-    if (next.stats.day % 3 === 0) {
-      refreshSettlementCenters(next.settlements, next.tiles, next.width, next.height);
+    if (state.stats.day % 3 === 0) {
+      refreshSettlementCenters(state.settlements, state.tiles, state.width, state.height);
       const merge = mergeNearbySettlements(
-        next.settlements,
-        next.tiles,
-        next.width,
-        next.height,
+        state.settlements,
+        state.tiles,
+        state.width,
+        state.height,
       );
       if (merge.merged) {
         events.push('merge');
@@ -127,18 +130,18 @@ export function tickSimulation(
     }
 
     const spawned = spawnVehicles(
-      next.tiles,
-      next.width,
-      next.height,
-      next.vehicles,
-      next.nextVehicleId,
-      next.stats.population,
-      next.seed,
-      next.stats.day,
+      state.tiles,
+      state.width,
+      state.height,
+      state.vehicles,
+      state.nextVehicleId,
+      state.stats.population,
+      state.seed,
+      state.stats.day,
     );
-    next.vehicles = spawned.vehicles;
-    next.nextVehicleId = spawned.nextId;
+    state.vehicles = spawned.vehicles;
+    state.nextVehicleId = spawned.nextId;
   }
 
-  return { state: next, events };
+  return { state, events };
 }

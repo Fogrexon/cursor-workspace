@@ -34,6 +34,26 @@ export function pathTotalLength(path: Array<{ x: number; y: number }>): number {
   return lens[lens.length - 1] ?? 0;
 }
 
+/** 車両の経路キャッシュを無効化して path を差し替える */
+export function setVehiclePath(
+  v: Vehicle,
+  path: Array<{ x: number; y: number }>,
+): void {
+  v.path = path;
+  v.pathLens = undefined;
+}
+
+function ensurePathLens(v: Vehicle): number[] {
+  if (v.pathLens && v.pathLens.length === v.path.length) return v.pathLens;
+  v.pathLens = pathLengths(v.path);
+  return v.pathLens;
+}
+
+function vehiclePathTotal(v: Vehicle): number {
+  const lens = ensurePathLens(v);
+  return lens[lens.length - 1] ?? 0;
+}
+
 /** 弧長 s における位置・向き。経路端でクランプ */
 export function poseAt(path: Array<{ x: number; y: number }>, s: number): PathPose {
   if (path.length === 0) return { x: 0, y: 0, dir: 0 };
@@ -43,6 +63,20 @@ export function poseAt(path: Array<{ x: number; y: number }>, s: number): PathPo
   }
 
   const lens = pathLengths(path);
+  return poseAtWithLens(path, lens, s);
+}
+
+function poseAtWithLens(
+  path: Array<{ x: number; y: number }>,
+  lens: number[],
+  s: number,
+): PathPose {
+  if (path.length === 0) return { x: 0, y: 0, dir: 0 };
+  if (path.length === 1) {
+    const p = path[0]!;
+    return { x: p.x, y: p.y, dir: 0 };
+  }
+
   const total = lens[lens.length - 1]!;
   const t = Math.max(0, Math.min(total, s));
 
@@ -63,6 +97,10 @@ export function poseAt(path: Array<{ x: number; y: number }>, s: number): PathPo
   };
 }
 
+function poseAtVehicle(v: Vehicle, s: number): PathPose {
+  return poseAtWithLens(v.path, ensurePathLens(v), s);
+}
+
 const CAR_COLORS = [0, 1, 2, 3, 4, 5];
 /** 電車の車両間隔 (タイル単位) */
 export const TRAIN_CAR_SPACING = 0.55;
@@ -79,7 +117,7 @@ function syncCarPoses(v: Vehicle): void {
   const n = v.cars ?? 4;
   const poses: PathPose[] = [];
   for (let i = 0; i < n; i++) {
-    poses.push(poseAt(v.path, Math.max(0, v.progress - i * TRAIN_CAR_SPACING)));
+    poses.push(poseAtVehicle(v, Math.max(0, v.progress - i * TRAIN_CAR_SPACING)));
   }
   v.carPoses = poses;
   const head = poses[0]!;
@@ -92,7 +130,7 @@ function applyPose(v: Vehicle): void {
   if (v.kind === 'train') {
     syncCarPoses(v);
   } else {
-    const pose = poseAt(v.path, v.progress);
+    const pose = poseAtVehicle(v, v.progress);
     v.x = pose.x;
     v.y = pose.y;
     v.dir = pose.dir;
@@ -250,7 +288,7 @@ export function assignCarTrip(
   if (!path || !dest) return false;
 
   v.destination = dest;
-  v.path = path;
+  setVehiclePath(v, path);
   v.progress = 0;
   applyPose(v);
   return true;
@@ -340,9 +378,9 @@ export function assignTrainTrip(
   if (!path || path.length < 2) return false;
 
   v.destination = { x: dest.x, y: dest.y };
-  v.path = path;
+  setVehiclePath(v, path);
   const cars = v.cars ?? 4;
-  v.progress = Math.min((cars - 1) * TRAIN_CAR_SPACING, pathTotalLength(path) * 0.2);
+  v.progress = Math.min((cars - 1) * TRAIN_CAR_SPACING, vehiclePathTotal(v) * 0.2);
   applyPose(v);
   return true;
 }
@@ -608,7 +646,7 @@ export function updateVehicles(
       continue;
     }
 
-    const total = pathTotalLength(v.path);
+    const total = vehiclePathTotal(v);
     if (total < 0.01) {
       if (world) {
         ensurePools();

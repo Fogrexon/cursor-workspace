@@ -37,6 +37,9 @@ function stubCity(
     nextVehicleId: 1,
     seed: 1,
     settlements,
+    mapRevision: 0,
+    visualRevision: 0,
+    constructionIndices: [],
   };
 }
 

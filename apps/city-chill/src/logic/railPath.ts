@@ -81,8 +81,12 @@ export function findRailPath(
 
   let guard = 0;
   while (open.length > 0 && guard++ < width * height * 4) {
-    open.sort((a, b) => a.f - b.f);
-    const cur = open.shift()!;
+    // 線形探索で最小 f（毎ループ sort は O(n² log n) になる）
+    let best = 0;
+    for (let i = 1; i < open.length; i++) {
+      if (open[i]!.f < open[best]!.f) best = i;
+    }
+    const cur = open.splice(best, 1)[0]!;
 
     if (cur.x === goal.x && cur.y === goal.y) {
       // 復元

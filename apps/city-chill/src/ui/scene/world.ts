@@ -33,52 +33,99 @@ export function createWorld(maxW = 128, maxH = 128): WorldSystem {
   root.add(vehicles.group);
 
   const buildingMap = new Map<number, { key: string; mesh: THREE.Group }>();
+  /** アニメ対象だけ毎フレーム更新する */
+  const animated = new Set<number>();
+  let lastMapRevision = -1;
+  let lastVisualRevision = -1;
+  let lastW = 0;
+  let lastH = 0;
 
-  function sync(state: CityState, time: number): void {
+  function removeBuilding(idx: number): void {
+    const existing = buildingMap.get(idx);
+    if (!existing) return;
+    buildingsGroup.remove(existing.mesh);
+    existing.mesh.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) obj.geometry.dispose();
+    });
+    buildingMap.delete(idx);
+    animated.delete(idx);
+  }
+
+  function upsertBuilding(idx: number, tile: Tile, x: number, y: number, time: number): void {
+    const key = tileKey(tile);
+    const existing = buildingMap.get(idx);
+    if (existing && existing.key === key) return;
+
+    if (existing) removeBuilding(idx);
+
+    const mesh = createBuildingMesh(tile, time);
+    if (!mesh) return;
+    // 2x2 はアンカー左上から半タイルずらして中心に置く
+    const ox = tile.footprint >= 2 ? 0.5 : 0;
+    const oz = tile.footprint >= 2 ? 0.5 : 0;
+    mesh.position.set((x + ox) * TILE, 0, (y + oz) * TILE);
+    buildingsGroup.add(mesh);
+    buildingMap.set(idx, { key, mesh });
+    if (mesh.userData.animated) animated.add(idx);
+  }
+
+  function syncAllBuildings(state: CityState, time: number): void {
     const { width, height, tiles } = state;
-    ground.sync(state, time);
-
     const live = new Set<number>();
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
-        const tile = tiles[idx]!;
-        const key = tileKey(tile);
         live.add(idx);
-
-        const existing = buildingMap.get(idx);
-        if (existing && existing.key === key) {
-          animateBuilding(existing.mesh, time);
-          continue;
-        }
-
-        if (existing) {
-          buildingsGroup.remove(existing.mesh);
-          existing.mesh.traverse((obj) => {
-            if (obj instanceof THREE.Mesh) obj.geometry.dispose();
-          });
-          buildingMap.delete(idx);
-        }
-
-        const mesh = createBuildingMesh(tile, time);
-        if (!mesh) continue;
-        // 2x2 はアンカー左上から半タイルずらして中心に置く
-        const ox = tile.footprint >= 2 ? 0.5 : 0;
-        const oz = tile.footprint >= 2 ? 0.5 : 0;
-        mesh.position.set((x + ox) * TILE, 0, (y + oz) * TILE);
-        buildingsGroup.add(mesh);
-        buildingMap.set(idx, { key, mesh });
-        animateBuilding(mesh, time);
+        upsertBuilding(idx, tiles[idx]!, x, y, time);
       }
     }
+    for (const idx of buildingMap.keys()) {
+      if (!live.has(idx)) removeBuilding(idx);
+    }
+  }
 
+  function syncConstructionBuildings(state: CityState, time: number): void {
+    const { width, tiles, constructionIndices } = state;
+    const check = new Set(constructionIndices);
     for (const [idx, entry] of buildingMap) {
-      if (live.has(idx)) continue;
-      buildingsGroup.remove(entry.mesh);
-      entry.mesh.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) obj.geometry.dispose();
-      });
-      buildingMap.delete(idx);
+      // tileKey の 3 番目が construction bucket
+      const cBucket = entry.key.split(':')[2];
+      if (cBucket && cBucket !== '0') check.add(idx);
+    }
+    for (const idx of check) {
+      const tile = tiles[idx];
+      if (!tile) {
+        removeBuilding(idx);
+        continue;
+      }
+      const x = idx % width;
+      const y = (idx / width) | 0;
+      upsertBuilding(idx, tile, x, y, time);
+    }
+  }
+
+  function sync(state: CityState, time: number): void {
+    const { width, height } = state;
+    ground.sync(state, time);
+
+    const sizeChanged = width !== lastW || height !== lastH;
+    const mapChanged = sizeChanged || state.mapRevision !== lastMapRevision;
+    const visualChanged = state.visualRevision !== lastVisualRevision;
+
+    if (mapChanged) {
+      syncAllBuildings(state, time);
+      lastMapRevision = state.mapRevision;
+      lastVisualRevision = state.visualRevision;
+      lastW = width;
+      lastH = height;
+    } else if (visualChanged) {
+      syncConstructionBuildings(state, time);
+      lastVisualRevision = state.visualRevision;
+    }
+
+    for (const idx of animated) {
+      const entry = buildingMap.get(idx);
+      if (entry) animateBuilding(entry.mesh, time);
     }
 
     vehicles.sync(state.vehicles, time);
@@ -94,6 +141,7 @@ export function createWorld(maxW = 128, maxH = 128): WorldSystem {
       });
     }
     buildingMap.clear();
+    animated.clear();
     disposeBuildingMaterials();
   }
 

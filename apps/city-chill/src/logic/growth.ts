@@ -1417,11 +1417,58 @@ export function tryBuild(
   return { built: true, kind: action, cost: total };
 }
 
-/** 建設アニメ進行 (ゆっくり減る) */
-export function tickConstruction(tiles: Tile[]): void {
-  for (const t of tiles) {
-    if (t.construction > 0) {
-      t.construction = Math.max(0, t.construction - 1 / 3);
-    }
+const CONSTRUCTION_STEP = 1 / 3;
+
+/** 建設中タイルの index を集める（建設日のあとなど） */
+export function collectConstructionIndices(tiles: Tile[]): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < tiles.length; i++) {
+    if (tiles[i]!.construction > 0) out.push(i);
   }
+  return out;
+}
+
+export interface ConstructionTickResult {
+  indices: number[];
+  /** ground/building の見た目バケットが変わったか */
+  visualChanged: boolean;
+}
+
+/**
+ * 建設アニメ進行 (ゆっくり減る)。
+ * activeIndices があればその範囲だけ更新し、全タイル走査を避ける。
+ */
+export function tickConstruction(
+  tiles: Tile[],
+  activeIndices?: number[],
+): ConstructionTickResult {
+  const next: number[] = [];
+  let visualChanged = false;
+
+  const tickOne = (i: number) => {
+    const t = tiles[i];
+    if (!t || t.construction <= 0) return;
+    const prevGround = Math.ceil(t.construction / 3);
+    const prevBuild = Math.ceil(t.construction / 4);
+    t.construction = Math.max(0, t.construction - CONSTRUCTION_STEP);
+    if (t.construction > 0) {
+      next.push(i);
+      if (
+        Math.ceil(t.construction / 3) !== prevGround ||
+        Math.ceil(t.construction / 4) !== prevBuild
+      ) {
+        visualChanged = true;
+      }
+    } else {
+      visualChanged = true;
+    }
+  };
+
+  if (activeIndices) {
+    for (const i of activeIndices) tickOne(i);
+  } else {
+    for (let i = 0; i < tiles.length; i++) tickOne(i);
+  }
+
+  return { indices: next, visualChanged };
 }

@@ -1,6 +1,5 @@
 import type { CityStats, GrowthStage, SettlementLevel, Tile } from '../types';
 import { DEFAULT_BALANCE, type BalanceConfig } from './balance';
-import { BUILDING_KINDS, countKind } from './grid';
 
 /** タイルから統計を再計算する */
 export function recomputeStats(
@@ -20,6 +19,12 @@ export function recomputeStats(
   let commerce = 0;
   let parks = 0;
   let hospitals = 0;
+  let roadCount = 0;
+  let railCount = 0;
+  let bridgeCount = 0;
+  let crossingCount = 0;
+  let stationCount = 0;
+  let buildingCount = 0;
 
   for (const tile of tiles) {
     // pad はアンカー側で一括計上（二重計上しない）
@@ -30,54 +35,69 @@ export function recomputeStats(
     switch (tile.kind) {
       case 'residential':
         housing += t.residentialHousing * tier;
+        buildingCount += 1;
         break;
       case 'tower':
         housing += t.towerHousing * tier * fpMult;
         jobs += t.towerJobs * tier * fpMult;
+        buildingCount += 1;
         break;
       case 'skyscraper':
         housing += t.skyscraperHousing * tier * fpMult;
         jobs += t.skyscraperJobs * tier * fpMult;
         commerce += t.skyscraperCommerce * tier * fpMult;
+        buildingCount += 1;
         break;
       case 'commercial':
         jobs += t.commercialJobs * tier;
         commerce += t.commercialCommerce * tier;
+        buildingCount += 1;
         break;
       case 'industrial':
         jobs += t.industrialJobs * tier;
         industry += t.industrialIndustry * tier;
+        buildingCount += 1;
         break;
       case 'road':
         transport += t.roadTransport;
+        roadCount += 1;
         break;
       case 'bridge':
         transport += balance.development.bridgeTransport;
+        bridgeCount += 1;
         break;
       case 'rail':
         transport += t.railTransport;
+        railCount += 1;
         break;
       case 'crossing':
         transport += t.crossingTransport;
+        crossingCount += 1;
         break;
       case 'station':
         transport += t.stationTransport;
         jobs += t.stationJobs;
+        stationCount += 1;
+        buildingCount += 1;
         break;
       case 'school':
         education += t.schoolEducation * tier;
         jobs += t.schoolJobs;
+        buildingCount += 1;
         break;
       case 'hospital':
         hospitals += 1;
         jobs += t.hospitalJobs;
+        buildingCount += 1;
         break;
       case 'park':
         parks += t.parkParks;
+        buildingCount += 1;
         break;
       case 'plaza':
         parks += t.plazaParks;
         commerce += t.plazaCommerce;
+        buildingCount += 1;
         break;
       default:
         break;
@@ -110,18 +130,15 @@ export function recomputeStats(
     industry * b.industryIncome +
     population * b.populationIncome +
     b.baseIncome;
-  const stationCount = countKind(tiles, 'station');
   const upkeep =
-    countKind(tiles, 'road') * b.roadUpkeep +
-    countKind(tiles, 'rail') * b.railUpkeep +
-    countKind(tiles, 'bridge') * balance.development.bridgeUpkeep +
-    countKind(tiles, 'crossing') * b.roadUpkeep * 0.5 +
+    roadCount * b.roadUpkeep +
+    railCount * b.railUpkeep +
+    bridgeCount * balance.development.bridgeUpkeep +
+    crossingCount * b.roadUpkeep * 0.5 +
     // 駅は建物維持に加え、追加のインフラ維持
     stationCount * b.buildingUpkeep * 1.8 +
-    [...BUILDING_KINDS].reduce(
-      (s, k) => s + (k === 'station' ? 0 : countKind(tiles, k) * b.buildingUpkeep),
-      0,
-    );
+    // station は上で 1.8 倍したので、通常の buildingUpkeep からは除外
+    (buildingCount - stationCount) * b.buildingUpkeep;
   const budgetDelta = income - upkeep;
 
   return {

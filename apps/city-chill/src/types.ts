@@ -130,6 +130,8 @@ export interface Vehicle {
   wait?: number;
   /** 電車の駅巡回方向 (+1 / -1)。端で折り返す */
   railDir?: 1 | -1;
+  /** 経路の累積弧長キャッシュ（path 変更時に再計算） */
+  pathLens?: number[];
 }
 
 export interface Settlement {
@@ -165,6 +167,17 @@ export interface CityState {
   seed: number;
   /** 複数の小さな町。道路でつながると合体する */
   settlements: Settlement[];
+  /**
+   * タイルの kind/tier/facing など構造が変わったときに増える。
+   * UI の差分同期用（毎フレーム全走査を避ける）。
+   */
+  mapRevision: number;
+  /**
+   * 建設アニメなど見た目バケットが変わったときに増える。
+   */
+  visualRevision: number;
+  /** 建設中タイルの線形 index（tickConstruction の走査範囲を絞る） */
+  constructionIndices: number[];
 }
 
 export interface SimConfig {

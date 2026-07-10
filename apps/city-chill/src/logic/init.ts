@@ -53,5 +53,8 @@ export function createInitialCity(
     nextVehicleId: 1,
     seed,
     settlements,
+    mapRevision: 0,
+    visualRevision: 0,
+    constructionIndices: [],
   };
 }

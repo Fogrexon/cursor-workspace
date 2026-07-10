@@ -213,9 +213,12 @@ export function createGround(maxTiles: number): GroundSystem {
   poles.frustumCulled = false;
   group.add(poles);
 
-  let lastSig = '';
+  let lastMapRevision = -1;
+  let lastVisualRevision = -1;
   let lastW = 0;
   let lastH = 0;
+  let cachedHasCrossing = false;
+  let cachedHasConstruction = false;
 
   function resetCounts(): void {
     for (const l of grassLayers) l.count = 0;
@@ -268,24 +271,14 @@ export function createGround(maxTiles: number): GroundSystem {
     mesh.setMatrixAt(countRef.count++, dummy.matrix);
   }
 
-  function signature(tiles: Tile[], w: number, h: number): string {
-    let hsh = (w * 73856093) ^ (h * 19349663);
+  function refreshCrossingCache(tiles: Tile[]): void {
+    cachedHasCrossing = false;
     for (let i = 0; i < tiles.length; i++) {
-      const t = tiles[i]!;
-      const cBucket = t.construction > 0 ? Math.ceil(t.construction / 3) : 0;
-      const faceCode =
-        t.facing === 'x' ? 1 : t.facing === 'z' ? 2 : t.facing === 'both' ? 3 : 0;
-      hsh =
-        (hsh * 31 +
-          t.kind.charCodeAt(0) +
-          t.kind.charCodeAt(t.kind.length - 1) * 13 +
-          t.tier * 7 +
-          cBucket * 17 +
-          faceCode * 23 +
-          t.variant) |
-        0;
+      if (tiles[i]!.kind === 'crossing') {
+        cachedHasCrossing = true;
+        break;
+      }
     }
-    return `${hsh}`;
   }
 
   function placeRoadArms(
@@ -433,33 +426,26 @@ export function createGround(maxTiles: number): GroundSystem {
 
   function sync(state: CityState, time: number): void {
     const { width, height, tiles } = state;
-    const sig = signature(tiles, width, height);
     const sizeChanged = width !== lastW || height !== lastH;
+    const mapChanged = sizeChanged || state.mapRevision !== lastMapRevision;
+    const visualChanged = state.visualRevision !== lastVisualRevision;
 
-    const hasCrossing = tiles.some((t) => t.kind === 'crossing');
-    const hasBuilding = tiles.some((t) => t.construction > 0);
-    if (sig === lastSig && !sizeChanged && !hasCrossing) {
-      for (const layer of waterLayers) {
-        const mat = layer.mesh.material as THREE.MeshStandardMaterial;
-        mat.emissiveIntensity = 0.12 + 0.08 * Math.sin(time * 1.5);
-      }
-      return;
-    }
-
-    if (sig === lastSig && !sizeChanged && hasCrossing && !hasBuilding) {
-      const gateCount = { count: 0 };
-      const poleCount = { count: 0 };
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          if (tiles[y * width + x]!.kind !== 'crossing') continue;
-          const roadM = orientedLinkMask(tiles, x, y, width, height, isRoadSurface);
-          placeCrossingGates(x, y, roadM, time, gateCount, poleCount);
+    if (!mapChanged && !visualChanged) {
+      if (cachedHasCrossing && !cachedHasConstruction) {
+        const gateCount = { count: 0 };
+        const poleCount = { count: 0 };
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            if (tiles[y * width + x]!.kind !== 'crossing') continue;
+            const roadM = orientedLinkMask(tiles, x, y, width, height, isRoadSurface);
+            placeCrossingGates(x, y, roadM, time, gateCount, poleCount);
+          }
         }
+        gates.count = gateCount.count;
+        gates.instanceMatrix.needsUpdate = true;
+        poles.count = poleCount.count;
+        poles.instanceMatrix.needsUpdate = true;
       }
-      gates.count = gateCount.count;
-      gates.instanceMatrix.needsUpdate = true;
-      poles.count = poleCount.count;
-      poles.instanceMatrix.needsUpdate = true;
       for (const layer of waterLayers) {
         const mat = layer.mesh.material as THREE.MeshStandardMaterial;
         mat.emissiveIntensity = 0.12 + 0.08 * Math.sin(time * 1.5);
@@ -467,7 +453,13 @@ export function createGround(maxTiles: number): GroundSystem {
       return;
     }
 
-    lastSig = sig;
+    if (mapChanged) {
+      refreshCrossingCache(tiles);
+    }
+    cachedHasConstruction = state.constructionIndices.length > 0;
+
+    lastMapRevision = state.mapRevision;
+    lastVisualRevision = state.visualRevision;
     lastW = width;
     lastH = height;
 

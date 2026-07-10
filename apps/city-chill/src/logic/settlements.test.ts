@@ -1,0 +1,95 @@
+import { describe, expect, it } from 'vitest';
+import { makeTile, idx } from './grid';
+import { createRng } from './rng';
+import {
+  findIntercityRailPair,
+  findStationSiteNear,
+  mergeNearbySettlements,
+  seedSettlements,
+  settlementDevelopment,
+} from './settlements';
+import type { Tile } from '../types';
+
+function grassGrid(w: number, h: number): Tile[] {
+  return Array.from({ length: w * h }, () => makeTile('grass'));
+}
+
+describe('settlements', () => {
+  it('広いマップでは複数の村を置く', () => {
+    const w = 80;
+    const tiles = grassGrid(w, w);
+    const rng = createRng(42);
+    const s = seedSettlements(tiles, w, w, rng);
+    expect(s.length).toBeGreaterThanOrEqual(2);
+    const names = new Set<string>();
+    for (const v of s) {
+      expect(tiles[v.cy * w + v.cx]!.kind).toBe('road');
+      expect(v.name.length).toBeGreaterThan(0);
+      expect(names.has(v.name)).toBe(false);
+      names.add(v.name);
+    }
+  });
+
+  it('近い集落が道路でつながると合体する', () => {
+    const w = 40;
+    const tiles = grassGrid(w, w);
+    const settlements = [
+      { id: 0, name: '青葉', cx: 12, cy: 20, radius: 8 },
+      { id: 1, name: '緑ヶ丘', cx: 22, cy: 20, radius: 8 },
+    ];
+    for (let x = 12; x <= 22; x++) {
+      tiles[20 * w + x] = makeTile('road');
+    }
+    tiles[19 * w + 12] = makeTile('residential', 1);
+    tiles[19 * w + 22] = makeTile('residential', 1);
+
+    const r = mergeNearbySettlements(settlements, tiles, w, w);
+    expect(r.merged).toBe(true);
+    expect(settlements.length).toBe(1);
+  });
+
+  it('発展度は周辺の開発タイルを数える', () => {
+    const w = 20;
+    const tiles = grassGrid(w, w);
+    tiles[10 * w + 10] = makeTile('road');
+    tiles[10 * w + 11] = makeTile('residential', 1);
+    const n = settlementDevelopment(tiles, w, w, {
+      id: 0,
+      name: '青葉',
+      cx: 10,
+      cy: 10,
+      radius: 5,
+    });
+    expect(n).toBeGreaterThanOrEqual(2);
+  });
+
+  it('駅用地は道路マスではなく道路の隣を選ぶ', () => {
+    const w = 20;
+    const tiles = grassGrid(w, w);
+    for (let x = 5; x <= 15; x++) tiles[idx(x, 10, w)] = makeTile('road');
+    const site = findStationSiteNear(tiles, w, w, 10, 10, 6);
+    expect(site).not.toBeNull();
+    expect(tiles[idx(site!.x, site!.y, w)]!.kind).not.toBe('road');
+    expect(tiles[idx(site!.x, site!.y, w)]!.kind).toBe('grass');
+  });
+
+  it('都市間ペアの終点も道路マスにならない', () => {
+    const w = 60;
+    const tiles = grassGrid(w, w);
+    for (const [cx, cy] of [
+      [15, 30],
+      [45, 30],
+    ] as const) {
+      for (let x = cx - 3; x <= cx + 3; x++) tiles[idx(x, cy, w)] = makeTile('road');
+      for (let y = cy - 2; y <= cy + 2; y++) tiles[idx(cx, y, w)] = makeTile('road');
+    }
+    const settlements = [
+      { id: 0, name: '青葉', cx: 15, cy: 30, radius: 10 },
+      { id: 1, name: '緑ヶ丘', cx: 45, cy: 30, radius: 10 },
+    ];
+    const pair = findIntercityRailPair(settlements, tiles, w, w, createRng(1));
+    expect(pair).not.toBeNull();
+    expect(tiles[idx(pair!.a.x, pair!.a.y, w)]!.kind).not.toBe('road');
+    expect(tiles[idx(pair!.b.x, pair!.b.y, w)]!.kind).not.toBe('road');
+  });
+});

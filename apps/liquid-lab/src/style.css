@@ -1,0 +1,344 @@
+/* Viewport-locked shell: only .panel-body scrolls on desktop. */
+html {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#app {
+  box-sizing: border-box;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3);
+  gap: var(--space-3);
+  max-width: 1200px;
+  width: 100%;
+  margin-inline: auto;
+  overflow: hidden;
+}
+
+.fallback {
+  max-width: 640px;
+  margin: var(--space-6) auto;
+  padding: var(--space-3);
+  overflow: auto;
+}
+
+.top {
+  flex: 0 0 auto;
+}
+
+.top .back,
+.fallback .back {
+  font-size: 0.9rem;
+}
+
+.top h1,
+.fallback h1 {
+  margin: var(--space-1) 0;
+  font-size: 1.5rem;
+}
+
+.top p,
+.fallback p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  /* Definite row track: content cannot grow the page. */
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: stretch;
+  container-type: size;
+}
+
+/*
+ * Panel is a sized grid cell (not a content-sized box).
+ * Scrolling happens on .panel-body with absolute fill — avoids flex/grid
+ * min-height:auto traps where overflow-y on the panel itself fails.
+ */
+.panel {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  align-self: stretch;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  pointer-events: auto;
+}
+
+.panel-body {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.viewport {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  place-self: center;
+  /* Largest 16:9 that fits the workspace cell (column width × row height). */
+  aspect-ratio: 16 / 9;
+  width: min(100%, calc(100cqh * 16 / 9));
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.viewport-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.btn {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.btn:hover {
+  background: var(--color-accent-hover);
+}
+
+.btn-secondary {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-accent);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.field label {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.field label span {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+.field-toggle {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.field-toggle label {
+  justify-content: flex-start;
+}
+
+.field-toggle input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.section-label {
+  margin: var(--space-1) 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: 0.02em;
+}
+
+.btn-beach {
+  width: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-beach:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-accent);
+}
+
+select,
+input[type='range'] {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+select {
+  padding: var(--space-2);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.stats {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.stats > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.stats dt {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.stats dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  html,
+  body {
+    height: auto;
+    max-height: none;
+    overflow: auto;
+  }
+
+  #app {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .layout {
+    flex: none;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    min-height: 100dvh;
+  }
+
+  .workspace {
+    flex: 1 1 auto;
+    min-height: auto;
+    overflow: visible;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .viewport {
+    width: min(100%, calc(min(42dvh, 360px) * 16 / 9));
+    height: auto;
+    max-height: min(42dvh, 360px);
+    aspect-ratio: 16 / 9;
+    place-self: stretch center;
+  }
+
+  .panel {
+    position: relative;
+    height: min(48dvh, 520px);
+    max-height: min(48dvh, 520px);
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .panel-body {
+    overflow-y: scroll;
+  }
+}

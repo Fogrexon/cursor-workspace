@@ -1,0 +1,12 @@
+{
+  "targets": {
+    "release": {
+      "outFile": "public/wave.wasm",
+      "optimize": true,
+      "runtime": "stub",
+      "exportRuntime": false,
+      "noAssert": true,
+      "converge": true
+    }
+  }
+}

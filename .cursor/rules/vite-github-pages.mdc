@@ -1,46 +1,33 @@
 ---
-description: Vite の GitHub Pages 向け設定(base パス・ビルド出力・ローカルライブラリ参照)
+description: Vite base path, docs outDir, and file: local libs for GitHub Pages
 globs: **/vite.config.*
 alwaysApply: false
 ---
 
-# Vite / GitHub Pages 設定
+# Vite / GitHub Pages
 
-GitHub Pages はプロジェクトサイト形式で `https://fogrexon.github.io/cursor-workspace/` に公開される。base パスの設定漏れはアセット 404 の最頻出原因なので必ず設定する。
-
-## vite.config.ts の必須設定
+Pages URL: `https://fogrexon.github.io/cursor-workspace/`. Missing `base` → asset 404s.
 
 ```typescript
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  // リポジトリ名 + アプリ名。末尾スラッシュ必須
-  base: '/cursor-workspace/<app-name>/',
+  base: '/cursor-workspace/<app-name>/', // trailing slash required
   build: {
-    // リポジトリルートの docs/<app-name>/ に出力する
     outDir: '../../docs/<app-name>',
     emptyOutDir: true,
   },
 });
 ```
 
-## 注意点
+- No root-absolute asset links (`/foo.png`). Use `import`, relative paths, or `import.meta.env.BASE_URL`
+- SPA routers: pass base (e.g. React Router `basename={import.meta.env.BASE_URL}`); prefer hash routing to avoid Pages 404s
+- After build, confirm `docs/<app-name>/index.html` paths start with `/cursor-workspace/<app-name>/`
 
-- アプリ内のリンク・アセット参照は絶対パス(`/foo.png`)を書かない。`import` 経由か相対パス、または `import.meta.env.BASE_URL` を使う。
-- SPA ルーターを使う場合、ルーターにも base を渡す(例: React Router の `basename={import.meta.env.BASE_URL}`)。可能なら hash ルーティングを選び、Pages の 404 問題を回避する。
-- ビルド後は `docs/<app-name>/index.html` 内のパスが `/cursor-workspace/<app-name>/` で始まっていることを確認する。
-
-## ローカルライブラリの参照
-
-`lib/` のライブラリは npm 公開せず、相対パス(`file:` プロトコル)で参照する。
+## Local libs (`file:`)
 
 ```json
-{
-  "dependencies": {
-    "@playground/theme": "file:../../lib/theme"
-  }
-}
+{ "dependencies": { "@playground/theme": "file:../../lib/theme" } }
 ```
 
-- `lib/` 側の package.json には `name`(`@playground/` スコープ)、`main` / `exports` を必ず定義する。
-- ライブラリを更新したら、利用側アプリで `npm install` を再実行して反映する。
+Lib `package.json` needs `name` (`@playground/…`), `main`/`exports`. After lib changes, re-`npm install` in consumers.

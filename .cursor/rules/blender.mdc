@@ -1,0 +1,35 @@
+---
+description: Blender asset layout and Blender MCP. Use for blender/, .blend files, or Blender MCP.
+globs: blender/**
+alwaysApply: false
+---
+
+# Blender / Blender MCP
+
+## Layout
+
+Keep `.blend` under `blender/` only — never in `apps/` or `docs/`.
+
+```
+blender/scenes/<scene-name>/   # kebab-case
+  <scene-name>.blend
+blender/exports/               # renders, thumbs, MCP temp output
+```
+
+- New scene → `blender/scenes/<scene-name>/`
+- MCP `render_*` / screenshots → `blender/exports/` (abs path OK)
+- Do not commit `*.blend1` / `*.blend2`
+
+## Before MCP
+
+1. Blender 5.1+ with **Allow Online Access** (addon listens on `localhost:9876`)
+2. **MCP** addon enabled; server running (Auto Start default)
+3. Cursor MCP server `blender` connected
+
+Server path: `C:\blender_mcp`. Config: `.cursor/mcp.json`.
+
+## Notes
+
+- Addon code exec is weakly guarded — avoid sensitive `.blend` files
+- Save scene edits under `blender/scenes/`
+- For Pages assets: copy selected files from `exports/` into the app — do not edit `docs/` builds by hand

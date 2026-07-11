@@ -1,36 +1,30 @@
 ---
-description: 責務分離とライブラリ切り出しの基準
+description: App layering and when to extract lib/ packages
 globs: apps/**,lib/**
 alwaysApply: false
 ---
 
-# 責務分離
+# Separation of concerns
 
-## アプリ内のレイヤ分け
+## App layers
 
-各アプリは最低限この単位でファイル/フォルダを分ける。1 ファイルに UI とロジックを混在させない。
+Do not mix UI and logic in one file:
 
 ```
 apps/<app-name>/src/
-  main.ts(x)      # エントリポイント(起動処理のみ)
-  ui/             # 表示・DOM/コンポーネント。ロジックを持たない
-  logic/          # 純粋なビジネスロジック。DOM に依存しない
-  state/          # 状態管理(必要な場合)
-  types.ts        # 型定義
+  main.ts(x)   # bootstrap only
+  ui/          # DOM/components; no business logic
+  logic/       # pure; no DOM
+  state/       # optional
+  types.ts
 ```
 
-- `logic/` は DOM・フレームワーク非依存の純粋関数を基本とする。これがテスト容易性の要。
-- `ui/` はロジックを import して使うだけにし、計算・判定を書かない。
+- `logic/`: framework-free pure functions (testability)
+- `ui/`: import and call logic; no calculations/decisions
 
-## lib/ への切り出し基準
+## Extract to `lib/<lib-name>/` when
 
-以下のいずれかに該当したら `lib/<lib-name>/` に独立パッケージとして切り出す。
+- Used (or clearly will be) by 2+ apps, or
+- Domain-agnostic utility (dates, RNG, shared UI)
 
-- 2 つ以上のアプリで使う(または確実に使う見込みがある)
-- アプリのドメインに依存しない汎用機能(例: 日付整形、乱数ユーティリティ、共通 UI 部品)
-
-切り出す際の要件:
-
-- `package.json` に `name`(`@playground/<lib-name>`)と `exports` を定義する
-- ライブラリ自身のユニットテストを同梱する
-- アプリ固有の知識(特定アプリの型や文言)を持ち込まない
+Requirements: `package.json` with `name` (`@playground/<lib-name>`) + `exports`; unit tests; no app-specific types/copy.

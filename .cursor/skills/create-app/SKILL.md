@@ -1,87 +1,66 @@
 ---
 name: create-app
-description: このリポジトリに新しいアプリを追加するワークフロー。ユーザーが「アプリを作って」「新しいアプリを追加」「〜を実装して公開して」などと依頼したとき、apps/ 配下に Vite プロジェクトを作成し docs/ にビルドして GitHub Pages で公開するまでの手順として使う。
+description: >-
+  Add a new app to this repo. Use when the user asks to create/add an app or
+  implement and publish something under apps/ → docs/ for GitHub Pages
+  (e.g. 「アプリを作って」「新しいアプリを追加」「実装して公開」).
 ---
 
-# アプリ新規作成ワークフロー
+# Create app
 
-新しいアプリを `apps/<app-name>/` に作り、ビルド成果物を `docs/<app-name>/` に出力し、ポータルに登録するまでの手順。ビルドと登録まで完了して初めてタスク完了。
+Ship only when built to `docs/<app-name>/` and registered on the portal.
 
-## チェックリスト
+## Checklist
 
-```
-- [ ] 1. apps/<app-name>/ に Vite プロジェクトを作成
-- [ ] 2. vite.config.ts に base と outDir を設定
-- [ ] 3. lib/theme を導入しトンマナを合わせる(ui-style スキル参照)
-- [ ] 4. ui / logic を分離して実装
-- [ ] 5. Vitest を設定し logic のテストを書く
-- [ ] 6. npm test が通ることを確認
-- [ ] 7. npm run build で docs/<app-name>/ に出力されることを確認
-- [ ] 8. docs/index.html のポータルにアプリカードを追加
-```
+1. Create Vite project in `apps/<app-name>/`
+2. Set `base` + `outDir` in `vite.config.ts`
+3. Add `lib/theme` (ui-style skill)
+4. Split `ui/` / `logic/`
+5. Vitest + logic tests
+6. `npm test` green
+7. `npm run build` → `docs/<app-name>/`
+8. Add portal card in `docs/index.html`
 
-## 1. プロジェクト作成
+## Scaffold
 
 ```bash
-# apps/ 配下で。テンプレートは用途に応じて vanilla-ts / react-ts など
+# from apps/
 npm create vite@latest <app-name> -- --template vanilla-ts
 ```
 
-## 2. vite.config.ts
-
 ```typescript
-import { defineConfig } from 'vite';
-
+// vite.config.ts
 export default defineConfig({
   base: '/cursor-workspace/<app-name>/',
-  build: {
-    outDir: '../../docs/<app-name>',
-    emptyOutDir: true,
-  },
+  build: { outDir: '../../docs/<app-name>', emptyOutDir: true },
 });
 ```
 
-## 3. package.json の要点
-
 ```json
 {
-  "name": "<app-name>",
-  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@playground/theme": "file:../../lib/theme"
-  },
-  "devDependencies": {
-    "vitest": "latest"
-  }
+  "dependencies": { "@playground/theme": "file:../../lib/theme" },
+  "devDependencies": { "vitest": "latest" }
 }
 ```
 
-依存の追加は `npm install` で行い、バージョンを手書きで捏造しない。
+Add deps via `npm install` — do not invent versions by hand.
 
-## 4. 実装
+## Implement / test / build
 
-`src/ui/`(表示)と `src/logic/`(純粋ロジック)を分ける。separation-of-concerns ルールに従う。
+- `src/ui/` vs `src/logic/` — separation-of-concerns rule
+- `*.test.ts` per logic module; `npm test` must pass — testing rule
+- After build, asset paths in `docs/<app-name>/index.html` must start with `/cursor-workspace/<app-name>/`
 
-## 5-6. テスト
-
-logic の関数ごとに `*.test.ts` を書き、`npm test` が全て通ることを確認する。testing ルール参照。
-
-## 7. ビルド確認
-
-`npm run build` 後、`docs/<app-name>/index.html` が生成され、内部のアセットパスが `/cursor-workspace/<app-name>/` で始まることを確認する。
-
-## 8. ポータル登録
-
-`docs/index.html` のアプリ一覧に、既存カードと同じマークアップでカードを 1 枚追加する。
+## Portal
 
 ```html
 <a class="card" href="./<app-name>/">
-  <h2>アプリ名</h2>
-  <p>1行の説明</p>
+  <h2>App name</h2>
+  <p>One-line description</p>
 </a>
 ```

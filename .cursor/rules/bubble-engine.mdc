@@ -1,73 +1,45 @@
 ---
-description: bubble-engine の設計方針と継続改善の進め方
+description: bubble-engine design and continuous improvement loop
 globs: lib/bubble-engine/**,apps/bubble-demo/**
 alwaysApply: false
 ---
 
-# bubble-engine 継続改善
+# bubble-engine
 
-## 設計原則
+## Principles
 
-1. **デモ駆動** — `apps/bubble-demo` で感じた開発体験の痛みをエンジンに還流する
-2. **TDD** — 新 API は `lib/bubble-engine` にテストを先に書く
-3. **シーン主導** — ゲームロジックは `Scene.update` / `Scene.onPointer` / `SceneContext.registerSystem` に置く。アプリシェルは遷移のみ
-4. **UI は宣言 + イベント** — `defineUi({ button: { action } })` → `ctx.onUiAction` → Pixi interactive。手動 hit test 禁止
-5. **アプリ非依存** — エンジンに特定ゲームの Resource 名や文言を入れない
+1. **Demo-driven** — pain from `apps/bubble-demo` feeds the engine
+2. **TDD** — new APIs: tests first in `lib/bubble-engine`
+3. **Scene-owned logic** — `Scene.update` / `onPointer` / `SceneContext.registerSystem`; shell only navigates
+4. **UI = declare + events** — `defineUi({ button: { action } })` → `ctx.onUiAction` → Pixi; no manual hit tests
+5. **App-agnostic** — no game-specific resource names/copy in the engine
 
-## レイヤ構成
+## Layers
 
 ```
-ECS (World / Component / System)
-  ├─ Physics (PlanckAdapter)
-  ├─ Render (GameRenderBackend / PixiAdapter)
-  ├─ UI (defineUi / UiLayout / UiSync / UiInputBridge)
-  └─ Scene (SceneManager / SceneContext / SceneNavigator)
-
-BubbleEngine
-  ├─ GameLoop (fixed / frame / render)
-  ├─ Scheduler (SystemPhase.Input 含む)
-  └─ bindCanvas + wirePixiUiActions
+ECS → Physics | Render | UI | Scene
+BubbleEngine → GameLoop | Scheduler | bindCanvas + wirePixiUiActions
 ```
 
-## SystemPhase 順序
+## SystemPhase
 
-`Input` → (fixed) `PreFixed` → `Physics` → `PostFixed` → (render) `PreRender` → `GameRender` → `PreUi` → `UiRender`
+`Input` → `PreFixed` → `Physics` → `PostFixed` → `PreRender` → `GameRender` → `PreUi` → `UiRender`
 
-- **Input** — `UiInputSystem` が pointer キューを drain → シーン `update`
-- **PreFixed〜PostFixed** — 固定 dt 物理
-- **PreRender〜UiRender** — 描画・UI 同期
+- **Input**: drain pointer queue → scene `update`
+- **PreFixed–PostFixed**: fixed-dt physics
+- **PreRender–UiRender**: draw + UI sync
 
-## シーン API チェックリスト
+## Scene API checklist
 
-新機能をシーン向けに足すとき:
+- [ ] Lifecycle hook on `SceneContext` (add if missing)
+- [ ] Auto-cleared on teardown / despawnAll
+- [ ] Demo scene drops shell responsibility
+- [ ] `examples/usage.ts` updated
 
-- [ ] `SceneContext` にライフサイクルフックがあるか（なければ追加）
-- [ ] teardown / despawnAll で自動解除されるか
-- [ ] `apps/bubble-demo` の該当 Scene からアプリシェル責務を減らせるか
-- [ ] `examples/usage.ts` を更新したか
+## Cycle
 
-## バックログ（優先度順）
+1. Reproduce friction in demo → 2. Minimal engine API + tests → 3. Migrate demo → 4. Update backlog
 
-| 優先 | 項目 | 状態 | 目的 |
-|------|------|------|------|
-| P1 | `SceneNavigator` / `SceneNavigate` | **Done** | アプリ固有フローイベントの一般化 |
-| P1 | `UiButton` と `action` の統合 | **Done** | `button: { action, label, ... }` ショートハンド |
-| P2 | `UiInputSystem` pointer キュー | **Done** | Input フェーズで drain、capture 中は UI 上も move 配信 |
-| P2 | `SceneScope` コンポーネント | **Done** | `spawn` / `mountUi` で `sceneId` 自動付与 |
-| P2 | 入力消費（UI vs ワールド） | **Done** | `isUiHit` + `worldPointerActive` |
-| P3 | `UiEffectSystem` | **Done** | `effects: { preset: 'pulse' }` → alpha アニメ |
-| P3 | ワールド bounds API | **Done** | `isOutsideView` |
-| P3 | デバッグ描画 | **Done** | `DebugDraw` resource + collider wireframe |
+Backlog (Done): SceneNavigator, UiButton `action`, UiInputSystem queue, SceneScope, UI vs world input, UiEffectSystem, view bounds, DebugDraw.
 
-## 改善サイクル
-
-1. デモで不便を再現
-2. エンジンに最小 API を追加 + テスト
-3. デモを新 API に移行
-4. バックログを更新
-
-## 次の候補
-
-- `UiEffects` shake preset の実装
-- `DebugDraw.showUiAnchors` の Pixi スクリーン空間描画（現状はワールド投影の簡易版）
-- シーン JSON / アセットパイプライン
+Next: UiEffects shake; `DebugDraw.showUiAnchors` (screen space); scene JSON / asset pipeline.

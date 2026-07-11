@@ -155,7 +155,11 @@ function weightedPick(rng: () => number, weights: Array<{ key: BuildAction; w: n
   return weights[weights.length - 1]!.key;
 }
 
-function findBuildableNearRoad(
+/**
+ * 道路沿いの建設候補。
+ * 過疎の一本道沿いには建てず、集落圏内か既存建物の近く（インフィル）を優先する。
+ */
+export function findBuildableNearRoad(
   tiles: Tile[],
   width: number,
   height: number,
@@ -165,7 +169,8 @@ function findBuildableNearRoad(
   const candidates: Array<{ x: number; y: number; score: number }> = [];
   const cx = focus?.cx ?? width / 2;
   const cy = focus?.cy ?? height / 2;
-  const scanR = focus ? Math.ceil(focus.radius) + 14 : Math.min(width, height);
+  const coreR = focus ? focus.radius + 2 : 8;
+  const scanR = focus ? Math.ceil(focus.radius) + 10 : Math.min(width, height);
 
   const y0 = Math.max(0, cy - scanR);
   const y1 = Math.min(height - 1, cy + scanR);
@@ -178,12 +183,23 @@ function findBuildableNearRoad(
       if (!t || !isBuildable(t.kind)) continue;
       if (!adjacentToRoad(tiles, x, y, width, height)) continue;
       if (isLastEscapeForBuilding(tiles, x, y, width, height)) continue;
+
       const dist = Math.hypot(x - cx, y - cy);
-      const forestPenalty = t.kind === 'forest' ? 0.35 : 0;
+      const density = countBuildingsNear(tiles, x, y, width, height, 3);
+      // 過疎フロンティア: 建物もなく集落からも遠い道路沿いには建てない
+      if (density === 0 && dist > coreR) continue;
+      if (density === 0 && dist > Math.max(5, coreR * 0.55)) continue;
+
+      const roadAdj = neighbors4(x, y, width, height).filter((n) =>
+        ROAD_LIKE.has(tiles[n.y * width + n.x]!.kind),
+      ).length;
+      const forestPenalty = t.kind === 'forest' ? 0.4 : 0;
       const score =
-        1 / (1 + dist * 0.12) +
+        density * 0.65 +
+        roadAdj * 0.45 +
+        1 / (1 + dist * 0.2) +
         settlementBiasScore(x, y, focus) +
-        rng() * 0.3 -
+        rng() * 0.25 -
         forestPenalty;
       candidates.push({ x, y, score });
     }
@@ -218,7 +234,11 @@ function findUpgradeTarget(
   return candidates[pickInt(rng, 0, candidates.length - 1)]!;
 }
 
-function findRoadExtension(
+/**
+ * 道路延伸候補。
+ * 一本道の外向き延伸より、既存道路からの分岐（T字）と建物周辺の網目化を優先する。
+ */
+export function findRoadExtension(
   tiles: Tile[],
   width: number,
   height: number,
@@ -228,7 +248,8 @@ function findRoadExtension(
   const ends: Array<{ x: number; y: number; score: number }> = [];
   const cx = focus?.cx ?? width / 2;
   const cy = focus?.cy ?? height / 2;
-  const scanR = focus ? Math.ceil(focus.radius) + 18 : Math.min(width, height);
+  const coreR = focus ? focus.radius + 4 : 10;
+  const scanR = focus ? Math.ceil(focus.radius) + 12 : Math.min(width, height);
   const y0 = Math.max(0, cy - scanR);
   const y1 = Math.min(height - 1, cy + scanR);
   const x0 = Math.max(0, cx - scanR);
@@ -240,7 +261,6 @@ function findRoadExtension(
       if (!t || !ROAD_LIKE.has(t.kind)) continue;
 
       const parentLinks = roadNeighborCount(tiles, x, y, width, height);
-      const tipBonus = parentLinks <= 1 ? 4 : parentLinks === 2 ? 1.5 : -1;
 
       for (const n of neighbors4(x, y, width, height)) {
         const nt = tiles[n.y * width + n.x]!;
@@ -251,29 +271,58 @@ function findRoadExtension(
         if (links >= 3) continue;
         if (links >= 2 && parentLinks >= 2) continue;
 
-        let score = tipBonus;
+        // 幹線の途中から枝を出す（T字）を先端延伸より強く優遇
+        let score = 0;
+        if (parentLinks === 2) score += 4.8;
+        else if (parentLinks <= 1) score += 1.6;
+        else score -= 1.2;
 
         const dx = n.x - x;
         const dy = n.y - y;
         const back = getTile(tiles, x - dx, y - dy, width, height);
-        if (back && ROAD_LIKE.has(back.kind)) score += 5;
-        else score += 0.5;
+        const isStraight = !!(back && ROAD_LIKE.has(back.kind));
+        // 直進は弱め、直角分岐を優先して網目を作る
+        if (isStraight) score += 1.0;
+        else score += 3.2;
 
-        if (links === 1) score += 3;
-        else if (links === 2) score -= 2;
+        // 既存道路へ近づく接続は歓迎
+        if (links === 1) score += 3.5;
+        else if (links === 2) score -= 1.8;
 
-        // 集落から外向き（他集落方向への延伸も少し優遇）
+        const density = countBuildingsNear(tiles, n.x, n.y, width, height, 3);
+        const parentDensity = countBuildingsNear(tiles, x, y, width, height, 3);
+        score += Math.min(4.5, density * 0.85 + parentDensity * 0.35);
+
         const dist = Math.hypot(n.x - cx, n.y - cy);
         const parentDist = Math.hypot(x - cx, y - cy);
-        if (dist > parentDist) score += 2.5;
-        else score -= 0.5;
-        score += settlementBiasScore(n.x, n.y, focus) * 0.5;
 
-        if (nt.kind === 'grass' || nt.kind === 'empty') score += 2;
-        else if (nt.kind === 'forest') score += 0.8;
+        // 集落圏外の過疎延伸を強く抑える
+        if (dist > coreR) {
+          score -= (dist - coreR) * 0.45;
+          if (density === 0 && parentDensity === 0) score -= 4.0;
+        } else {
+          score += 1.2 - (dist / (coreR + 1)) * 0.6;
+        }
+
+        // 外向きは建物があるときだけわずかに優遇（フロンティア開拓はしない）
+        if (dist > parentDist) {
+          score += density + parentDensity > 0 ? 0.7 : -2.0;
+        } else {
+          score += 0.4;
+        }
+
+        score += settlementBiasScore(n.x, n.y, focus) * 0.85;
+
+        if (nt.kind === 'grass' || nt.kind === 'empty') score += 1.4;
+        else if (nt.kind === 'forest') score += 0.5;
         else score -= 1.5;
 
-        score += rng() * 0.4;
+        // 極端な過疎先端は候補から外す（分岐も圏内にない場合の逃げ道は残す）
+        if (dist > coreR + 6 && density === 0 && parentDensity === 0 && parentLinks <= 1) {
+          continue;
+        }
+
+        score += rng() * 0.5;
         ends.push({ x: n.x, y: n.y, score });
       }
     }
@@ -281,7 +330,7 @@ function findRoadExtension(
 
   if (ends.length === 0) return null;
   ends.sort((a, b) => b.score - a.score);
-  const pool = ends.slice(0, Math.min(8, ends.length));
+  const pool = ends.slice(0, Math.min(10, ends.length));
   return pool[pickInt(rng, 0, pool.length - 1)]!;
 }
 

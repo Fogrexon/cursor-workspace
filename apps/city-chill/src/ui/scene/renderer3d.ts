@@ -17,6 +17,12 @@ import { createWorld, type WorldSystem } from './world';
 
 export interface CityRenderer3D {
   render(state: CityState, time: number, dt: number): void;
+  /** sync / draw を分けて計測する */
+  renderTimed(
+    state: CityState,
+    time: number,
+    dt: number,
+  ): { syncMs: number; drawMs: number; calls: number };
   resize(cssW: number, cssH: number): void;
   pan(dx: number, dy: number, viewH: number): void;
   zoom(factor: number): void;
@@ -35,7 +41,7 @@ export function createCityRenderer3D(canvas: HTMLCanvasElement): CityRenderer3D 
     alpha: false,
     powerPreference: 'high-performance',
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.55;
@@ -68,6 +74,26 @@ export function createCityRenderer3D(canvas: HTMLCanvasElement): CityRenderer3D 
     renderer.render(scene, cam.camera);
   }
 
+  function renderTimed(
+    state: CityState,
+    time: number,
+    dt: number,
+  ): { syncMs: number; drawMs: number; calls: number } {
+    followCityCenter(cam, state, dt);
+    updateIsoCameraProjection(cam, aspect);
+    syncIsoCamera(cam);
+    const t0 = performance.now();
+    world.sync(state, time);
+    const t1 = performance.now();
+    renderer.render(scene, cam.camera);
+    const t2 = performance.now();
+    return {
+      syncMs: t1 - t0,
+      drawMs: t2 - t1,
+      calls: renderer.info.render.calls,
+    };
+  }
+
   function pan(dx: number, dy: number, viewH: number): void {
     panByScreenDelta(cam, dx, dy, viewH);
     syncIsoCamera(cam);
@@ -97,6 +123,7 @@ export function createCityRenderer3D(canvas: HTMLCanvasElement): CityRenderer3D 
 
   return {
     render,
+    renderTimed,
     resize,
     pan,
     zoom,

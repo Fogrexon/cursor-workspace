@@ -1,5 +1,9 @@
 import type { CityState } from '../types';
 import { createSimulation, tickSimulation } from '../logic/simulation';
+import {
+  createFrameProfiler,
+  formatProfileLine,
+} from '../logic/frameProfile';
 import { createCityRenderer3D } from './scene/renderer3d';
 import { renderHudShell, updateHudControls, updateHudStats } from './hud';
 
@@ -14,14 +18,18 @@ export function mountApp(root: HTMLElement): void {
       <div class="hud" id="hud"></div>
       <canvas id="city-canvas"></canvas>
       <div class="toast" id="toast" hidden></div>
+      <div class="perf" id="perf" title="P キーで表示切替">…</div>
     </div>
   `;
 
   const canvas = root.querySelector<HTMLCanvasElement>('#city-canvas')!;
   const hudEl = root.querySelector<HTMLElement>('#hud')!;
   const toastEl = root.querySelector<HTMLElement>('#toast')!;
+  const perfEl = root.querySelector<HTMLElement>('#perf')!;
 
   const view = createCityRenderer3D(canvas);
+  const profiler = createFrameProfiler();
+  let showPerf = true;
 
   let state: CityState = createSimulation({
     seed: Date.now() % 100000,
@@ -40,6 +48,7 @@ export function mountApp(root: HTMLElement): void {
   let time = 0;
   let hudTimer = 0;
   let toastTimer = 0;
+  let perfTimer = 0;
 
   let dragging = false;
   let lastMx = 0;
@@ -74,7 +83,6 @@ export function mountApp(root: HTMLElement): void {
       rebuildHudShell();
       return;
     }
-    // 数値だけ差し替え → panel-body のスクロールは維持される
     updateHudStats(hudEl, state.stats, state.stage);
     updateHudControls(hudEl, {
       paused,
@@ -113,6 +121,7 @@ export function mountApp(root: HTMLElement): void {
   };
 
   function frame(now: number): void {
+    profiler.beginFrame(now);
     const rawDt = Math.min(0.05, (now - last) / 1000);
     last = now;
     const dt = paused ? 0 : rawDt * SPEEDS[speedIdx]!;
@@ -120,7 +129,9 @@ export function mountApp(root: HTMLElement): void {
 
     if (dt > 0) {
       const prevStage = state.stage;
+      const t0 = performance.now();
       const result = tickSimulation(state, dt, secondsPerDay);
+      profiler.markSim(performance.now() - t0);
       state = result.state;
 
       for (const e of result.events) {
@@ -130,9 +141,13 @@ export function mountApp(root: HTMLElement): void {
       if (prevStage !== state.stage) {
         showToast(`街が「${stageName(state.stage)}」に成長した`);
       }
+    } else {
+      profiler.markSim(0);
     }
 
-    view.render(state, time, rawDt);
+    const timed = view.renderTimed(state, time, rawDt);
+    profiler.markSync(timed.syncMs);
+    profiler.markDraw(timed.drawMs);
 
     const focusTown = view.consumeFocusAnnounce();
     if (focusTown) showToast(`${focusTown}を眺める`);
@@ -141,6 +156,19 @@ export function mountApp(root: HTMLElement): void {
     if (hudTimer <= 0) {
       refreshHud();
       hudTimer = 0.25;
+    }
+
+    perfTimer -= rawDt;
+    if (showPerf && perfTimer <= 0) {
+      const snap = profiler.snapshot();
+      perfEl.hidden = false;
+      perfEl.textContent = formatProfileLine(snap, {
+        calls: timed.calls,
+        vehicles: state.vehicles.length,
+      });
+      perfTimer = 0.25;
+    } else if (!showPerf) {
+      perfEl.hidden = true;
     }
 
     if (toastTimer > 0) {
@@ -179,6 +207,13 @@ export function mountApp(root: HTMLElement): void {
       showToast('新しい街が始まった');
       hudShellDirty = true;
       refreshHud(true);
+    }
+  });
+
+  window.addEventListener('keydown', (ev) => {
+    if (ev.key === 'p' || ev.key === 'P') {
+      showPerf = !showPerf;
+      perfEl.hidden = !showPerf;
     }
   });
 

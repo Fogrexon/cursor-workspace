@@ -190,13 +190,13 @@ function reachableRailKeys(
 
 /**
  * 同じ網上の駅を巡回順に並べる。
- * 端の駅から線路距離の最近傍でつなぎ、全駅を通るルートにする。
+ * 端の駅から幾何距離の最近傍でつなぐ（A* は実際の移動経路に任せる）。
  */
 export function orderStationsForTour(
   stations: Array<{ x: number; y: number }>,
-  tiles: Tile[],
-  width: number,
-  height: number,
+  _tiles: Tile[],
+  _width: number,
+  _height: number,
 ): Array<{ x: number; y: number }> {
   if (stations.length <= 1) return stations.map((s) => ({ ...s }));
   if (stations.length === 2) return stations.map((s) => ({ ...s }));
@@ -225,30 +225,11 @@ export function orderStationsForTour(
     let bestD = Number.POSITIVE_INFINITY;
     for (const s of stations) {
       if (used.has(posKey(s))) continue;
-      const path = findNetworkPath(
-        tiles,
-        width,
-        height,
-        last,
-        s,
-        RAIL_LIKE,
-        TRAIN_PATH_MAX,
-      );
-      const d = path && path.length >= 2 ? pathTotalLength(path) : Number.POSITIVE_INFINITY;
+      // 線路距離の A* は O(駅²) 回走り重いので、幾何距離で巡回順だけ決める
+      const d = Math.abs(s.x - last.x) + Math.abs(s.y - last.y);
       if (d < bestD) {
         bestD = d;
         best = s;
-      }
-    }
-    if (!best || !Number.isFinite(bestD)) {
-      // 経路が取れない残りはユークリッド最近傍で埋める
-      for (const s of stations) {
-        if (used.has(posKey(s))) continue;
-        const d = Math.hypot(s.x - last.x, s.y - last.y);
-        if (d < bestD) {
-          bestD = d;
-          best = s;
-        }
       }
     }
     if (!best) break;
@@ -444,8 +425,9 @@ export function spawnVehicles(
 
   let id = nextId;
   let attempts = 0;
+  let carCount = vehicles.filter((v) => v.kind !== 'train').length;
 
-  while (vehicles.filter((v) => v.kind !== 'train').length < targetCars && roads.length > 1) {
+  while (carCount < targetCars && roads.length > 1) {
     if (++attempts > 60) break;
     const start = roads[pickInt(rng, 0, roads.length - 1)]!;
     const kindRoll = rng();
@@ -469,6 +451,7 @@ export function spawnVehicles(
     };
     if (!assignCarTrip(v, tiles, width, height, roads, rng)) continue;
     vehicles.push(v);
+    carCount += 1;
   }
 
   // 連結した鉄道路線ごと（駅が2つ以上）に、少なくとも1本は走らせる

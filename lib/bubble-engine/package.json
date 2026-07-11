@@ -1,0 +1,22 @@
+{
+  "name": "@playground/bubble-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "2D ECS game engine (planck + Pixi.js)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "planck": "^1.4.2",
+    "pixi.js": "^8.0.0"
+  },
+  "devDependencies": {
+    "happy-dom": "^17.0.0",
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.10"
+  }
+}

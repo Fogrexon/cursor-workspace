@@ -26,7 +26,7 @@ blender/exports/               # renders, thumbs, MCP temp output
 2. **MCP** addon enabled; server running (Auto Start default)
 3. Cursor MCP server `blender` connected
 
-Server path: `C:\blender_mcp`. Config: `.cursor/mcp.json`.
+Server path: `C:\blender_mcp`. Config: `.cursor/mcp.json` (`uv` on PATH; no `BLENDER_PATH` — add Blender to PATH if CLI tools need it).
 
 ## Notes
 

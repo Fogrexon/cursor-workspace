@@ -3,3 +3,12 @@ dist/
 *.local
 .DS_Store
 Thumbs.db
+
+# Blender backups / autosave
+*.blend1
+*.blend2
+*.blend@*
+
+# Blender MCP の一時出力（意図した成果物は scenes/ かアプリ側へ移す）
+blender/exports/*
+!blender/exports/.gitkeep

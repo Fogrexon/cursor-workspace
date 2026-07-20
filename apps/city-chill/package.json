@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run generate:buildings && tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "generate:buildings": "tsx src/scripts/generateBuildingAssets.ts",
     "balance": "tsx src/scripts/balance.ts",
     "balance:json": "tsx src/scripts/balance.ts --json"
   },

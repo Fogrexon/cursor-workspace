@@ -237,6 +237,7 @@ function findUpgradeTarget(
 /**
  * 道路延伸候補。
  * 一本道の外向き延伸より、既存道路からの分岐（T字）と建物周辺の網目化を優先する。
+ * 伐採・橋など地形追加コストが高いマスは避け、安い草地を選ぶ。
  */
 export function findRoadExtension(
   tiles: Tile[],
@@ -244,12 +245,14 @@ export function findRoadExtension(
   height: number,
   rng: () => number,
   focus: Settlement | null,
+  balance: BalanceConfig = DEFAULT_BALANCE,
 ): { x: number; y: number } | null {
   const ends: Array<{ x: number; y: number; score: number }> = [];
   const cx = focus?.cx ?? width / 2;
   const cy = focus?.cy ?? height / 2;
   const coreR = focus ? focus.radius + 4 : 10;
   const scanR = focus ? Math.ceil(focus.radius) + 12 : Math.min(width, height);
+  const baseRoadCost = Math.max(1, balance.buildCosts.road);
   const y0 = Math.max(0, cy - scanR);
   const y1 = Math.min(height - 1, cy + scanR);
   const x0 = Math.max(0, cx - scanR);
@@ -266,6 +269,10 @@ export function findRoadExtension(
         const nt = tiles[n.y * width + n.x]!;
         if (!isPaveable(nt.kind)) continue;
         if (wouldFormRoadBlock2x2(tiles, n.x, n.y, width, height)) continue;
+
+        const surcharge = terrainBuildSurcharge(nt.kind, 'road', balance);
+        if (!Number.isFinite(surcharge)) continue;
+        const totalCost = baseRoadCost + surcharge;
 
         const links = roadNeighborCount(tiles, n.x, n.y, width, height);
         if (links >= 3) continue;
@@ -313,9 +320,10 @@ export function findRoadExtension(
 
         score += settlementBiasScore(n.x, n.y, focus) * 0.85;
 
-        if (nt.kind === 'grass' || nt.kind === 'empty') score += 1.4;
-        else if (nt.kind === 'forest') score += 0.5;
-        else score -= 1.5;
+        // 安いマスを選ぶ（草地≪伐採≪橋）。コスト比で減点するので特別扱いしない
+        const costRatio = totalCost / baseRoadCost;
+        score += 1.4 / costRatio;
+        score -= (costRatio - 1) * 4.5;
 
         // 極端な過疎先端は候補から外す（分岐も圏内にない場合の逃げ道は残す）
         if (dist > coreR + 6 && density === 0 && parentDensity === 0 && parentLinks <= 1) {
@@ -1264,7 +1272,7 @@ export function tryBuild(
   const baseCost = (costs as Record<string, number>)[action] ?? costs.fallback;
 
   if (action === 'road') {
-    const spot = findRoadExtension(tiles, width, height, rng, focus);
+    const spot = findRoadExtension(tiles, width, height, rng, focus, balance);
     if (!spot) {
       const target = findDemolitionForRoad(
         tiles,
@@ -1374,7 +1382,7 @@ export function tryBuild(
 
   const spot = findBuildableNearRoad(tiles, width, height, rng, focus);
   if (!spot) {
-    const roadSpot = findRoadExtension(tiles, width, height, rng, focus);
+    const roadSpot = findRoadExtension(tiles, width, height, rng, focus, balance);
     if (roadSpot) {
       const under = getTile(tiles, roadSpot.x, roadSpot.y, width, height)!;
       const surcharge = terrainBuildSurcharge(under.kind, 'road', balance);

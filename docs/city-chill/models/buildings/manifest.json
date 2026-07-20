@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "res_box_t1",
+      "kind": "residential",
+      "baseHeight": 0.7,
+      "footprint": 1,
+      "glb": "res_box_t1.glb",
+      "texture": "res_box_t1.png"
+    },
+    {
+      "id": "res_lwing_t1",
+      "kind": "residential",
+      "baseHeight": 0.7,
+      "footprint": 1,
+      "glb": "res_lwing_t1.glb",
+      "texture": "res_lwing_t1.png"
+    },
+    {
+      "id": "res_hip_t1",
+      "kind": "residential",
+      "baseHeight": 0.75,
+      "footprint": 1,
+      "glb": "res_hip_t1.glb",
+      "texture": "res_hip_t1.png"
+    },
+    {
+      "id": "res_tall_t3",
+      "kind": "residential",
+      "baseHeight": 1.2,
+      "footprint": 1,
+      "glb": "res_tall_t3.glb",
+      "texture": "res_tall_t3.png"
+    },
+    {
+      "id": "com_shop",
+      "kind": "commercial",
+      "baseHeight": 0.85,
+      "footprint": 1,
+      "glb": "com_shop.glb",
+      "texture": "com_shop.png"
+    },
+    {
+      "id": "com_awning",
+      "kind": "commercial",
+      "baseHeight": 0.9,
+      "footprint": 1,
+      "glb": "com_awning.glb",
+      "texture": "com_awning.png"
+    },
+    {
+      "id": "com_block",
+      "kind": "commercial",
+      "baseHeight": 1.15,
+      "footprint": 1,
+      "glb": "com_block.glb",
+      "texture": "com_block.png"
+    },
+    {
+      "id": "ind_shed",
+      "kind": "industrial",
+      "baseHeight": 0.8,
+      "footprint": 1,
+      "glb": "ind_shed.glb",
+      "texture": "ind_shed.png"
+    },
+    {
+      "id": "ind_sawtooth",
+      "kind": "industrial",
+      "baseHeight": 0.95,
+      "footprint": 1,
+      "glb": "ind_sawtooth.glb",
+      "texture": "ind_sawtooth.png"
+    },
+    {
+      "id": "ind_chimney",
+      "kind": "industrial",
+      "baseHeight": 1.1,
+      "footprint": 1,
+      "glb": "ind_chimney.glb",
+      "texture": "ind_chimney.png"
+    },
+    {
+      "id": "school_main",
+      "kind": "school",
+      "baseHeight": 0.95,
+      "footprint": 1,
+      "glb": "school_main.glb",
+      "texture": "school_main.png"
+    },
+    {
+      "id": "hospital_cross",
+      "kind": "hospital",
+      "baseHeight": 1,
+      "footprint": 1,
+      "glb": "hospital_cross.glb",
+      "texture": "hospital_cross.png"
+    },
+    {
+      "id": "station_canopy",
+      "kind": "station",
+      "baseHeight": 0.65,
+      "footprint": 1,
+      "glb": "station_canopy.glb",
+      "texture": "station_canopy.png"
+    },
+    {
+      "id": "tower_plain",
+      "kind": "tower",
+      "baseHeight": 2,
+      "footprint": 1,
+      "glb": "tower_plain.glb",
+      "texture": "tower_plain.png"
+    },
+    {
+      "id": "tower_setback",
+      "kind": "tower",
+      "baseHeight": 2.2,
+      "footprint": 1,
+      "glb": "tower_setback.glb",
+      "texture": "tower_setback.png"
+    },
+    {
+      "id": "tower_podium",
+      "kind": "tower",
+      "baseHeight": 2.3,
+      "footprint": 1,
+      "glb": "tower_podium.glb",
+      "texture": "tower_podium.png"
+    },
+    {
+      "id": "tower_step",
+      "kind": "tower",
+      "baseHeight": 2.4,
+      "footprint": 1,
+      "glb": "tower_step.glb",
+      "texture": "tower_step.png"
+    },
+    {
+      "id": "tower2_plain",
+      "kind": "tower",
+      "baseHeight": 2.7,
+      "footprint": 2,
+      "glb": "tower2_plain.glb",
+      "texture": "tower2_plain.png"
+    },
+    {
+      "id": "tower2_setback",
+      "kind": "tower",
+      "baseHeight": 2.9,
+      "footprint": 2,
+      "glb": "tower2_setback.glb",
+      "texture": "tower2_setback.png"
+    },
+    {
+      "id": "sky_plain",
+      "kind": "skyscraper",
+      "baseHeight": 4,
+      "footprint": 1,
+      "glb": "sky_plain.glb",
+      "texture": "sky_plain.png"
+    },
+    {
+      "id": "sky_setback",
+      "kind": "skyscraper",
+      "baseHeight": 4.4,
+      "footprint": 1,
+      "glb": "sky_setback.glb",
+      "texture": "sky_setback.png"
+    },
+    {
+      "id": "sky_podium",
+      "kind": "skyscraper",
+      "baseHeight": 4.6,
+      "footprint": 1,
+      "glb": "sky_podium.glb",
+      "texture": "sky_podium.png"
+    },
+    {
+      "id": "sky_step",
+      "kind": "skyscraper",
+      "baseHeight": 4.8,
+      "footprint": 1,
+      "glb": "sky_step.glb",
+      "texture": "sky_step.png"
+    },
+    {
+      "id": "sky2_plain",
+      "kind": "skyscraper",
+      "baseHeight": 5.4,
+      "footprint": 2,
+      "glb": "sky2_plain.glb",
+      "texture": "sky2_plain.png"
+    },
+    {
+      "id": "sky2_setback",
+      "kind": "skyscraper",
+      "baseHeight": 5.8,
+      "footprint": 2,
+      "glb": "sky2_setback.glb",
+      "texture": "sky2_setback.png"
+    }
+  ]
+}

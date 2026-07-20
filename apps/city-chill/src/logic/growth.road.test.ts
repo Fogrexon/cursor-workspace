@@ -78,4 +78,37 @@ describe('road branching & sparse build', () => {
     expect(spot).not.toBeNull();
     expect(Math.hypot(spot!.x - 7, spot!.y - 7)).toBeLessThanOrEqual(6);
   });
+
+  it('舗装コストが高い地形（池・森）より安い草地へ道路を伸ばしやすい', () => {
+    const w = 17;
+    const h = 13;
+    const tiles = blank(w, h);
+    const cy = 6;
+    // 東西の町道（中央）
+    for (let x = 4; x <= 12; x++) tiles[idx(x, cy, w)] = makeTile('road');
+    tiles[idx(8, cy - 1, w)] = makeTile('residential', 1);
+    tiles[idx(9, cy + 1, w)] = makeTile('residential', 1);
+
+    // 北側は橋コストの高い池、西は伐採コストの森、南・東は安い草地
+    for (let y = 0; y <= 3; y++) {
+      for (let x = 3; x <= 13; x++) tiles[idx(x, y, w)] = makeTile('water');
+    }
+    for (let y = 4; y <= 8; y++) {
+      for (let x = 0; x <= 2; x++) tiles[idx(x, y, w)] = makeTile('forest');
+    }
+
+    const focus = focusAt(8, cy, 6);
+    let costlyHits = 0;
+    let cheapHits = 0;
+    for (let seed = 1; seed <= 50; seed++) {
+      const spot = findRoadExtension(tiles, w, h, createRng(seed), focus);
+      expect(spot).not.toBeNull();
+      if (!spot) continue;
+      const under = tiles[idx(spot.x, spot.y, w)]!.kind;
+      if (under === 'water' || under === 'forest') costlyHits += 1;
+      else cheapHits += 1;
+    }
+    expect(cheapHits).toBeGreaterThan(costlyHits);
+    expect(cheapHits).toBeGreaterThan(35);
+  });
 });

@@ -12,7 +12,7 @@ const MAP_SIZE = 128;
 /** ベースの 1 日あたり秒数 (大きいほどゆっくり) */
 const SECONDS_PER_DAY = 2.8;
 
-export function mountApp(root: HTMLElement): void {
+export async function mountApp(root: HTMLElement): Promise<void> {
   root.innerHTML = `
     <div class="app">
       <div class="hud" id="hud"></div>
@@ -27,7 +27,7 @@ export function mountApp(root: HTMLElement): void {
   const toastEl = root.querySelector<HTMLElement>('#toast')!;
   const perfEl = root.querySelector<HTMLElement>('#perf')!;
 
-  const view = createCityRenderer3D(canvas);
+  const view = await createCityRenderer3D(canvas);
   const profiler = createFrameProfiler();
   let showPerf = true;
 

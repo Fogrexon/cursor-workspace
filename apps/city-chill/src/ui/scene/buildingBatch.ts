@@ -1,29 +1,35 @@
 import * as THREE from 'three';
-import type { CityState, Tile, TileKind } from '../../types';
+import type { CityState, Tile } from '../../types';
 import {
-  animateBuilding,
   buildingHeight,
-  bodyColorFor,
   createBuildingMesh,
   disposeBuildingMaterials,
-  footprintSize,
-  getFacadeMaterial,
+  animateBuilding,
   isBatchableBuilding,
 } from './buildings';
+import { pickBuildingModelId, getModelDef } from '../../logic/buildingCatalog';
+import {
+  loadBuildingLibrary,
+  type BuildingLibrary,
+  type LoadedBuildingModel,
+} from './buildingLibrary';
 import { TILE } from './isoCamera';
 
 const dummy = new THREE.Object3D();
-const tmpColor = new THREE.Color();
 
-interface BatchLayer {
+interface PartLayer {
   mesh: THREE.InstancedMesh;
   count: number;
-  capacity: number;
+}
+
+interface ModelBatch {
+  model: LoadedBuildingModel;
+  parts: PartLayer[];
 }
 
 /**
- * 完成済み建物をアーキタイプ別 InstancedMesh で描画する。
- * 建設中・公園など特殊物だけ個別 Group に残す。
+ * 事前 GLB モデルを InstancedMesh で描画する。
+ * 建設中・公園などは従来どおり個別 Group。
  */
 export interface BuildingBatchSystem {
   group: THREE.Group;
@@ -31,97 +37,92 @@ export interface BuildingBatchSystem {
   dispose(): void;
 }
 
-function archetypeKey(tile: Tile): string {
-  // 形は単位立方体のスケールで表現。材質だけ kind×窓スタイルで分ける
-  return `${tile.kind}:${tile.variant % 4}`;
-}
-
 function isSpecialBuilding(tile: Tile): boolean {
   if (tile.kind === 'park' || tile.kind === 'plaza') return true;
-  if (tile.construction > 0 && isBuildingKind(tile.kind)) return true;
-  return false;
+  if (tile.construction <= 0) return false;
+  switch (tile.kind) {
+    case 'residential':
+    case 'commercial':
+    case 'industrial':
+    case 'school':
+    case 'hospital':
+    case 'station':
+    case 'tower':
+    case 'skyscraper':
+      return true;
+    default:
+      return false;
+  }
 }
 
-function isBuildingKind(kind: Tile['kind']): boolean {
-  return (
-    kind === 'residential' ||
-    kind === 'commercial' ||
-    kind === 'industrial' ||
-    kind === 'school' ||
-    kind === 'hospital' ||
-    kind === 'station' ||
-    kind === 'tower' ||
-    kind === 'skyscraper' ||
-    kind === 'park' ||
-    kind === 'plaza'
-  );
-}
-
-export function createBuildingBatchSystem(maxTiles: number): BuildingBatchSystem {
+export async function createBuildingBatchSystem(
+  maxTiles: number,
+): Promise<BuildingBatchSystem> {
   const capacity = Math.min(4096, Math.max(512, maxTiles));
   const group = new THREE.Group();
   group.name = 'building-batch';
 
-  const layers = new Map<string, BatchLayer>();
+  const library: BuildingLibrary = await loadBuildingLibrary();
+  const batches = new Map<string, ModelBatch>();
+
+  for (const [id, model] of library.models) {
+    const parts: PartLayer[] = model.parts.map((part, i) => {
+      const mesh = new THREE.InstancedMesh(part.geometry, part.material, capacity);
+      mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.name = `batch-${id}-${i}`;
+      group.add(mesh);
+      return { mesh, count: 0 };
+    });
+    batches.set(id, { model, parts });
+  }
+
   const specialGroup = new THREE.Group();
   specialGroup.name = 'building-special';
   group.add(specialGroup);
 
   const specialMap = new Map<number, { key: string; mesh: THREE.Group }>();
   const animated = new Set<number>();
-  const unitGeo = new THREE.BoxGeometry(1, 1, 1);
 
   let lastMapRevision = -1;
   let lastVisualRevision = -1;
   let lastW = 0;
   let lastH = 0;
 
-  function ensureLayer(tile: Tile): BatchLayer {
-    const key = archetypeKey(tile);
-    let layer = layers.get(key);
-    if (layer) return layer;
-
-    const kind = tile.kind as TileKind;
-    const mat = getFacadeMaterial(kind, tile.variant);
-    const mesh = new THREE.InstancedMesh(unitGeo, mat, capacity);
-    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    mesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
-    mesh.count = 0;
-    mesh.frustumCulled = false;
-    mesh.name = `batch-${key}`;
-    group.add(mesh);
-    layer = { mesh, count: 0, capacity };
-    layers.set(key, layer);
-    return layer;
-  }
-
   function resetBatches(): void {
-    for (const layer of layers.values()) {
-      layer.count = 0;
-      layer.mesh.count = 0;
+    for (const batch of batches.values()) {
+      for (const part of batch.parts) {
+        part.count = 0;
+        part.mesh.count = 0;
+      }
     }
   }
 
   function placeBatch(tile: Tile, x: number, y: number): void {
-    const layer = ensureLayer(tile);
-    if (layer.count >= layer.capacity) return;
+    const modelId = pickBuildingModelId(tile);
+    if (!modelId) return;
+    const batch = batches.get(modelId);
+    if (!batch) return;
 
-    const kind = tile.kind as TileKind;
+    const def = getModelDef(modelId);
     const fp = Math.max(1, tile.footprint || 1);
-    const h = buildingHeight(kind, tile.tier, 0, fp);
-    const { w, d } = footprintSize(kind, fp);
+    const targetH = buildingHeight(tile.kind, tile.tier, 0, fp);
+    const baseH = def?.baseHeight ?? batch.model.baseHeight;
+    const sy = baseH > 1e-6 ? targetH / baseH : 1;
+
     const ox = fp >= 2 ? 0.5 : 0;
     const oz = fp >= 2 ? 0.5 : 0;
-
-    dummy.position.set((x + ox) * TILE, h / 2, (y + oz) * TILE);
+    dummy.position.set((x + ox) * TILE, 0, (y + oz) * TILE);
     dummy.rotation.set(0, 0, 0);
-    dummy.scale.set(w, h, d);
+    dummy.scale.set(1, sy, 1);
     dummy.updateMatrix();
-    layer.mesh.setMatrixAt(layer.count, dummy.matrix);
 
-    tmpColor.setHex(bodyColorFor(kind, tile.variant));
-    layer.mesh.setColorAt(layer.count, tmpColor);
-    layer.count += 1;
+    for (const part of batch.parts) {
+      if (part.count >= capacity) continue;
+      part.mesh.setMatrixAt(part.count, dummy.matrix);
+      part.count += 1;
+    }
   }
 
   function removeSpecial(idx: number): void {
@@ -129,10 +130,7 @@ export function createBuildingBatchSystem(maxTiles: number): BuildingBatchSystem
     if (!existing) return;
     specialGroup.remove(existing.mesh);
     existing.mesh.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
-        // 共有材以外の clone だけ dispose。geometry は個別生成分
-        obj.geometry.dispose();
-      }
+      if (obj instanceof THREE.Mesh) obj.geometry.dispose();
     });
     specialMap.delete(idx);
     animated.delete(idx);
@@ -165,7 +163,7 @@ export function createBuildingBatchSystem(maxTiles: number): BuildingBatchSystem
         const tile = tiles[idx]!;
         if (tile.kind === 'pad' || tile.footprint === 0) continue;
 
-        if (isBatchableBuilding(tile)) {
+        if (isBatchableBuilding(tile) && pickBuildingModelId(tile)) {
           placeBatch(tile, x, y);
         } else if (isSpecialBuilding(tile)) {
           liveSpecial.add(idx);
@@ -178,10 +176,11 @@ export function createBuildingBatchSystem(maxTiles: number): BuildingBatchSystem
       if (!liveSpecial.has(idx)) removeSpecial(idx);
     }
 
-    for (const layer of layers.values()) {
-      layer.mesh.count = layer.count;
-      layer.mesh.instanceMatrix.needsUpdate = true;
-      if (layer.mesh.instanceColor) layer.mesh.instanceColor.needsUpdate = true;
+    for (const batch of batches.values()) {
+      for (const part of batch.parts) {
+        part.mesh.count = part.count;
+        part.mesh.instanceMatrix.needsUpdate = true;
+      }
     }
   }
 
@@ -206,11 +205,13 @@ export function createBuildingBatchSystem(maxTiles: number): BuildingBatchSystem
   }
 
   function dispose(): void {
-    for (const layer of layers.values()) {
-      group.remove(layer.mesh);
-      layer.mesh.dispose();
+    for (const batch of batches.values()) {
+      for (const part of batch.parts) {
+        group.remove(part.mesh);
+        part.mesh.dispose();
+      }
     }
-    layers.clear();
+    batches.clear();
     for (const entry of specialMap.values()) {
       specialGroup.remove(entry.mesh);
       entry.mesh.traverse((obj) => {
@@ -219,7 +220,7 @@ export function createBuildingBatchSystem(maxTiles: number): BuildingBatchSystem
     }
     specialMap.clear();
     animated.clear();
-    unitGeo.dispose();
+    library.dispose();
     disposeBuildingMaterials();
   }
 

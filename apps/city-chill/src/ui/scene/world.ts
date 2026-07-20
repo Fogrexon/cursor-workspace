@@ -10,14 +10,14 @@ export interface WorldSystem {
   dispose(): void;
 }
 
-export function createWorld(maxW = 128, maxH = 128): WorldSystem {
+export async function createWorld(maxW = 128, maxH = 128): Promise<WorldSystem> {
   const root = new THREE.Group();
   root.name = 'world';
 
   const ground: GroundSystem = createGround(maxW * maxH);
   root.add(ground.group);
 
-  const buildings: BuildingBatchSystem = createBuildingBatchSystem(maxW * maxH);
+  const buildings: BuildingBatchSystem = await createBuildingBatchSystem(maxW * maxH);
   root.add(buildings.group);
 
   const vehicles: VehicleSystem = createVehicleSystem();

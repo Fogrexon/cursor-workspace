@@ -17,7 +17,6 @@ import { createWorld, type WorldSystem } from './world';
 
 export interface CityRenderer3D {
   render(state: CityState, time: number, dt: number): void;
-  /** sync / draw を分けて計測する */
   renderTimed(
     state: CityState,
     time: number,
@@ -26,15 +25,15 @@ export interface CityRenderer3D {
   resize(cssW: number, cssH: number): void;
   pan(dx: number, dy: number, viewH: number): void;
   zoom(factor: number): void;
-  /** 最大の都市クラスタへ寄せる */
   resetCamera(state: CityState): void;
-  /** フォーカスが切り替わったら町名を返す */
   consumeFocusAnnounce(): string | null;
   dispose(): void;
   readonly canvas: HTMLCanvasElement;
 }
 
-export function createCityRenderer3D(canvas: HTMLCanvasElement): CityRenderer3D {
+export async function createCityRenderer3D(
+  canvas: HTMLCanvasElement,
+): Promise<CityRenderer3D> {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -51,7 +50,7 @@ export function createCityRenderer3D(canvas: HTMLCanvasElement): CityRenderer3D 
 
   let aspect = 1;
   const cam: IsoCameraState = createIsoCamera(aspect);
-  const world: WorldSystem = createWorld(128, 128);
+  const world: WorldSystem = await createWorld(128, 128);
   scene.add(world.root);
 
   let cssW = 1;

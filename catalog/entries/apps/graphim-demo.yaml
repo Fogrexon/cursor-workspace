@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: graphim-demo
+kind: app
+title: Graphim Demo
+summary: WebGL ノードベース画像エフェクト（graphim submodule）のライブデモ。
+tags: [demo, webgl, shader, image]
+status: published
+order: 75
+related: [graphim]

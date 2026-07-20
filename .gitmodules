@@ -1,0 +1,3 @@
+[submodule "lib/graphim"]
+	path = lib/graphim
+	url = https://github.com/Fogrexon/Graphim.git

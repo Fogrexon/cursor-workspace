@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-20T11:22:55.157Z",
+  "generatedAt": "2026-07-20T12:25:27.737Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -173,6 +173,30 @@
       "portal": true
     },
     {
+      "id": "graphim-demo",
+      "kind": "app",
+      "title": "Graphim Demo",
+      "summary": "WebGL ノードベース画像エフェクト（graphim submodule）のライブデモ。",
+      "tags": [
+        "demo",
+        "webgl",
+        "shader",
+        "image"
+      ],
+      "status": "published",
+      "sourcePath": "apps/graphim-demo",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/graphim-demo/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/graphim-demo",
+        "docs": null
+      },
+      "related": [
+        "graphim"
+      ],
+      "order": 75,
+      "portal": true
+    },
+    {
       "id": "gen-ui",
       "kind": "app",
       "title": "Gen UI",
@@ -239,6 +263,30 @@
       "order": 110,
       "portal": false,
       "package": "@playground/bubble-engine"
+    },
+    {
+      "id": "graphim",
+      "kind": "lib",
+      "title": "Graphim",
+      "summary": "WebGL ノードベース画像エフェクトライブラリ（git submodule → Fogrexon/Graphim）。",
+      "tags": [
+        "webgl",
+        "shader",
+        "image"
+      ],
+      "status": "published",
+      "sourcePath": "lib/graphim",
+      "links": {
+        "demo": null,
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/graphim",
+        "docs": null
+      },
+      "related": [
+        "graphim-demo"
+      ],
+      "order": 115,
+      "portal": false,
+      "package": "graphim"
     },
     {
       "id": "canvas-style",

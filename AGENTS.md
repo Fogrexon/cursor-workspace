@@ -12,6 +12,7 @@ See `.cursor/rules/` and `.cursor/skills/` for project conventions.
 
 - No root `package.json`. Each `apps/<name>/` and `lib/<name>/` is its own npm project — `cd` there before commands.
 - `lib/theme` is CSS-only (`file:../../lib/theme`). After theme changes, re-run `npm install` in consuming apps.
+- `lib/graphim` is a **git submodule** ([Fogrexon/Graphim](https://github.com/Fogrexon/Graphim)). After clone: `git submodule update --init --recursive`. Vite apps need `graphimGlsl()` from `graphim/vite`.
 
 ### Commands (per app dir)
 

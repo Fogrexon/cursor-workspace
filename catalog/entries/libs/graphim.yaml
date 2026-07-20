@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: graphim
+kind: lib
+title: Graphim
+summary: WebGL ノードベース画像エフェクトライブラリ（git submodule → Fogrexon/Graphim）。
+package: graphim
+tags: [webgl, shader, image]
+status: published
+order: 115
+portal: false
+related: [graphim-demo]
+sourcePath: lib/graphim

@@ -1,0 +1,89 @@
+@import '@playground/theme';
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+#app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-3) var(--space-6);
+}
+
+.header h1 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.85rem;
+  color: var(--color-accent);
+}
+
+.header p {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.back {
+  margin: 0 0 var(--space-2) !important;
+  font-size: 0.9rem;
+}
+
+.back a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.back a:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.controls label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.controls select {
+  min-width: 12rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.stage-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: var(--color-surface);
+  line-height: 0;
+}
+
+.stage-wrap img,
+.stage-wrap canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.status {
+  margin: var(--space-3) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: canvas-style-ui
+kind: app
+title: Canvas Style UI
+summary: "@playground/canvas-style — stylesheet + node() ツリーで Canvas 上のゲーム HUD を組む。"
+tags: [demo, canvas, ui]
+status: published
+order: 70
+related: [canvas-style]

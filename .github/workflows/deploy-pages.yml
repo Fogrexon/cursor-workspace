@@ -1,4 +1,5 @@
 # docs/ にコミット済みの静的成果物を GitHub Pages へ公開する。
+# デプロイ直前に catalog YAML から api/catalog.json を再生成する。
 # main への push / マージで自動実行される。
 name: Deploy GitHub Pages
 
@@ -25,6 +26,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/workspace-catalog/package-lock.json
+
+      - name: Generate catalog API
+        working-directory: tools/workspace-catalog
+        run: |
+          npm ci
+          npm run build -- --root ../..
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

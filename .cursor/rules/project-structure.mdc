@@ -10,20 +10,28 @@ GitHub Pages playground: Vite apps under `apps/`, shared packages under `lib/`, 
 ```
 apps/<app-name>/     # Vite app (kebab-case)
 lib/<lib-name>/      # local npm package
+catalog/             # portal / API metadata (YAML)
+  workspace.yaml     # path + URL conventions
+  entries/           # per app/lib metadata
 docs/                # Pages root (commit builds)
-  index.html         # portal (hand-maintained)
+  index.html         # portal (loads api/catalog.json)
+  api/catalog.json   # static catalog API (generated)
   <app-name>/        # build output
+knowledge/           # product intent, domain, incidents (not Pages)
 blender/             # Blender assets (see blender rule)
+tools/workspace-catalog/  # reusable YAML → JSON catalog builder
 ```
 
 ## Must
 
 - New apps → `apps/<kebab-case>/`; finish with `npm run build` into `docs/<app-name>/`
-- Add/rename/remove apps → update portal cards in `docs/index.html`
+- Add/rename/remove apps or libs → update `catalog/entries/` and regenerate `docs/api/catalog.json` (`cd tools/workspace-catalog && npm run build -- --root ../..`)
 - Shared code → `lib/` (separation-of-concerns); UI tokens → `lib/theme` (ui-style skill)
 - New apps → follow create-app skill
+- Business intent / incident lessons → `knowledge/` (knowledge-capture skill); not into `docs/` builds
 
 ## Must not
 
-- Hand-edit `docs/` builds (except `docs/index.html`, `docs/.nojekyll`)
+- Hand-edit `docs/` builds (except `docs/index.html`, `docs/.nojekyll`, and generated `docs/api/catalog.json` via the catalog tool)
 - Commit `node_modules/` or build intermediates
+- Hand-maintain portal card lists in HTML — cards come from `catalog.json`

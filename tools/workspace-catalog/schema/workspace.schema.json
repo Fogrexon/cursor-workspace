@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playground.local/workspace-catalog/workspace.schema.json",
+  "title": "WorkspaceCatalogWorkspace",
+  "description": "Repo-level path conventions and URL templates for a workspace-style catalog.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "paths", "pages", "source"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": {
+      "type": "string",
+      "description": "Stable workspace id (often matches the GitHub repo name).",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "locale": { "type": "string", "default": "en" },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["apps", "libs", "docs", "entries"],
+      "properties": {
+        "apps": {
+          "type": "string",
+          "description": "Repo-relative directory for apps (e.g. apps)."
+        },
+        "libs": {
+          "type": "string",
+          "description": "Repo-relative directory for libraries (e.g. lib)."
+        },
+        "docs": {
+          "type": "string",
+          "description": "Static site / GitHub Pages root (e.g. docs)."
+        },
+        "entries": {
+          "type": "string",
+          "description": "Directory of entry YAML files (recursive)."
+        }
+      }
+    },
+    "pages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseUrl", "apiPath"],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "description": "Public Pages root with trailing slash (e.g. https://user.github.io/repo/)."
+        },
+        "apiPath": {
+          "type": "string",
+          "description": "Output path of catalog.json relative to paths.docs (e.g. api/catalog.json)."
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "owner", "repo", "branch", "treeUrlTemplate"],
+      "properties": {
+        "provider": { "type": "string", "const": "github" },
+        "owner": { "type": "string", "minLength": 1 },
+        "repo": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 },
+        "treeUrlTemplate": {
+          "type": "string",
+          "description": "Template with {owner} {repo} {branch} {path}. Example: https://github.com/{owner}/{repo}/tree/{branch}/{path}"
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "appSourcePath": {
+          "type": "string",
+          "description": "Template with {id}. Default: {apps}/{id}",
+          "default": "{apps}/{id}"
+        },
+        "libSourcePath": {
+          "type": "string",
+          "description": "Template with {id}. Default: {libs}/{id}",
+          "default": "{libs}/{id}"
+        },
+        "demoPath": {
+          "type": "string",
+          "description": "Pages-relative demo path template with {id}. Default: {id}/",
+          "default": "{id}/"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: openworld-flight
+kind: app
+title: Openworld Flight
+summary: openworld-kit の村をミニチュア飛行機で飛び回り、スカイリングをくぐる 3D フライトゲーム。
+tags: [game, three, openworld]
+status: published
+order: 60
+related: [theme]

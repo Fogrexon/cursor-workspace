@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: liquid-lab
+kind: app
+title: Liquid Lab
+summary: シミュレーション範囲を広げ、浅い水深で砂浜のような流体を試せるラボ。
+tags: [simulation, fluid, webgl]
+status: published
+order: 10

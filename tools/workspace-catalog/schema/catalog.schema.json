@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playground.local/workspace-catalog/catalog.schema.json",
+  "title": "WorkspaceCatalogApi",
+  "description": "Static JSON API document emitted for GitHub Pages (or any static host).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "generatedAt", "workspace", "items"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "workspace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "pagesBaseUrl", "apiUrl", "source"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "locale": { "type": "string" },
+        "pagesBaseUrl": { "type": "string" },
+        "apiUrl": {
+          "type": "string",
+          "description": "Absolute URL of this document."
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "owner", "repo", "branch", "url"],
+          "properties": {
+            "provider": { "type": "string" },
+            "owner": { "type": "string" },
+            "repo": { "type": "string" },
+            "branch": { "type": "string" },
+            "url": {
+              "type": "string",
+              "description": "Repo root on the host (e.g. GitHub)."
+            }
+          }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "title",
+          "summary",
+          "tags",
+          "status",
+          "sourcePath",
+          "links",
+          "related",
+          "order",
+          "portal"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "kind": { "type": "string", "enum": ["app", "lib"] },
+          "title": { "type": "string" },
+          "summary": { "type": "string" },
+          "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "status": {
+            "type": "string",
+            "enum": ["published", "draft", "local", "archived"]
+          },
+          "package": { "type": "string" },
+          "sourcePath": { "type": "string" },
+          "links": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["demo", "source", "docs"],
+            "properties": {
+              "demo": { "type": ["string", "null"] },
+              "source": { "type": ["string", "null"] },
+              "docs": { "type": ["string", "null"] }
+            }
+          },
+          "related": { "type": "array", "items": { "type": "string" } },
+          "order": { "type": "integer" },
+          "portal": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

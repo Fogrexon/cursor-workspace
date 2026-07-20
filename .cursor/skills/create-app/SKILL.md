@@ -8,7 +8,7 @@ description: >-
 
 # Create app
 
-Ship only when built to `docs/<app-name>/` and registered on the portal.
+Ship only when built to `docs/<app-name>/` and registered in the catalog.
 
 ## Checklist
 
@@ -19,7 +19,7 @@ Ship only when built to `docs/<app-name>/` and registered on the portal.
 5. Vitest + logic tests
 6. `npm test` green
 7. `npm run build` → `docs/<app-name>/`
-8. Add portal card in `docs/index.html`
+8. Add `catalog/entries/apps/<app-name>.yaml` and regenerate catalog JSON
 
 ## Scaffold
 
@@ -56,11 +56,28 @@ Add deps via `npm install` — do not invent versions by hand.
 - `*.test.ts` per logic module; `npm test` must pass — testing rule
 - After build, asset paths in `docs/<app-name>/index.html` must start with `/cursor-workspace/<app-name>/`
 
-## Portal
+## Catalog (portal + static API)
 
-```html
-<a class="card" href="./<app-name>/">
-  <h2>App name</h2>
-  <p>One-line description</p>
-</a>
+Do **not** hand-edit portal cards in `docs/index.html`. Add an entry YAML, then regenerate:
+
+```yaml
+# catalog/entries/apps/<app-name>.yaml
+id: <app-name>
+kind: app
+title: App name
+summary: One-line description
+tags: [example]
+status: published
+order: 80
 ```
+
+```bash
+cd tools/workspace-catalog
+npm install   # first time
+npm run build -- --root ../..
+# → docs/api/catalog.json
+# CI: npm run check -- --root ../..（.github/workflows/catalog.yml）
+```
+
+Spec / reuse in other repos: `tools/workspace-catalog/README.md`.
+Local-only apps (no Pages): `status: local`, `demoPath: null`, `portal: false`.

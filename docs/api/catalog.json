@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "generatedAt": "2026-07-20T11:22:55.157Z",
+  "workspace": {
+    "id": "cursor-workspace",
+    "title": "Cursor Playground",
+    "description": "Cursor で実装したアプリの実験場。各カードからアプリを開けます。",
+    "locale": "ja",
+    "pagesBaseUrl": "https://fogrexon.github.io/cursor-workspace/",
+    "apiUrl": "https://fogrexon.github.io/cursor-workspace/api/catalog.json",
+    "source": {
+      "provider": "github",
+      "owner": "Fogrexon",
+      "repo": "cursor-workspace",
+      "branch": "main",
+      "url": "https://github.com/Fogrexon/cursor-workspace/tree/main"
+    }
+  },
+  "items": [
+    {
+      "id": "liquid-lab",
+      "kind": "app",
+      "title": "Liquid Lab",
+      "summary": "シミュレーション範囲を広げ、浅い水深で砂浜のような流体を試せるラボ。",
+      "tags": [
+        "simulation",
+        "fluid",
+        "webgl"
+      ],
+      "status": "published",
+      "sourcePath": "apps/liquid-lab",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/liquid-lab/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/liquid-lab",
+        "docs": null
+      },
+      "related": [],
+      "order": 10,
+      "portal": true
+    },
+    {
+      "id": "city-chill",
+      "kind": "app",
+      "title": "City Chill",
+      "summary": "小さな村が大都会へ育つ様子を、アイソメ視点でただ眺める都市自動発展シミュレーター。",
+      "tags": [
+        "simulation",
+        "city",
+        "three"
+      ],
+      "status": "published",
+      "sourcePath": "apps/city-chill",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/city-chill/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/city-chill",
+        "docs": null
+      },
+      "related": [
+        "theme"
+      ],
+      "order": 20,
+      "portal": true
+    },
+    {
+      "id": "box2d-car-game",
+      "kind": "app",
+      "title": "Box2D カーゲーム",
+      "summary": "Box2D 物理エンジンで動く車を操作し、丘を越えてどこまで進めるか挑戦するヒルクライムゲーム。",
+      "tags": [
+        "game",
+        "physics",
+        "box2d"
+      ],
+      "status": "published",
+      "sourcePath": "apps/box2d-car-game",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/box2d-car-game/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/box2d-car-game",
+        "docs": null
+      },
+      "related": [],
+      "order": 30,
+      "portal": true
+    },
+    {
+      "id": "bubble-demo",
+      "kind": "app",
+      "title": "Angry Bubble",
+      "summary": "bubble-engine 製のスリングショットデモ。ブロックを崩して豚をすべて倒せ。",
+      "tags": [
+        "game",
+        "demo",
+        "pixi"
+      ],
+      "status": "published",
+      "sourcePath": "apps/bubble-demo",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/bubble-demo/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/bubble-demo",
+        "docs": null
+      },
+      "related": [
+        "bubble-engine"
+      ],
+      "order": 40,
+      "portal": true
+    },
+    {
+      "id": "temperature-converter",
+      "kind": "app",
+      "title": "温度変換",
+      "summary": "摂氏・華氏・ケルビンを相互に変換します。",
+      "tags": [
+        "utility"
+      ],
+      "status": "published",
+      "sourcePath": "apps/temperature-converter",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/temperature-converter/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/temperature-converter",
+        "docs": null
+      },
+      "related": [
+        "theme"
+      ],
+      "order": 50,
+      "portal": true
+    },
+    {
+      "id": "openworld-flight",
+      "kind": "app",
+      "title": "Openworld Flight",
+      "summary": "openworld-kit の村をミニチュア飛行機で飛び回り、スカイリングをくぐる 3D フライトゲーム。",
+      "tags": [
+        "game",
+        "three",
+        "openworld"
+      ],
+      "status": "published",
+      "sourcePath": "apps/openworld-flight",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/openworld-flight/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/openworld-flight",
+        "docs": null
+      },
+      "related": [
+        "theme"
+      ],
+      "order": 60,
+      "portal": true
+    },
+    {
+      "id": "canvas-style-ui",
+      "kind": "app",
+      "title": "Canvas Style UI",
+      "summary": "@playground/canvas-style — stylesheet + node() ツリーで Canvas 上のゲーム HUD を組む。",
+      "tags": [
+        "demo",
+        "canvas",
+        "ui"
+      ],
+      "status": "published",
+      "sourcePath": "apps/canvas-style-ui",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/canvas-style-ui/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/canvas-style-ui",
+        "docs": null
+      },
+      "related": [
+        "canvas-style"
+      ],
+      "order": 70,
+      "portal": true
+    },
+    {
+      "id": "gen-ui",
+      "kind": "app",
+      "title": "Gen UI",
+      "summary": "Cursor SDK 連携の生成 UI ホスト。ローカル実行向け（GitHub Pages 非公開）。",
+      "tags": [
+        "generative-ui",
+        "cursor-sdk",
+        "local"
+      ],
+      "status": "local",
+      "sourcePath": "apps/gen-ui",
+      "links": {
+        "demo": null,
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/gen-ui",
+        "docs": null
+      },
+      "related": [
+        "gen-ui-lib"
+      ],
+      "order": 80,
+      "portal": false
+    },
+    {
+      "id": "theme",
+      "kind": "lib",
+      "title": "Theme",
+      "summary": "全アプリ共通のデザイントークン（CSS）。",
+      "tags": [
+        "css",
+        "design-tokens"
+      ],
+      "status": "published",
+      "sourcePath": "lib/theme",
+      "links": {
+        "demo": null,
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/theme",
+        "docs": null
+      },
+      "related": [],
+      "order": 100,
+      "portal": false,
+      "package": "@playground/theme"
+    },
+    {
+      "id": "bubble-engine",
+      "kind": "lib",
+      "title": "Bubble Engine",
+      "summary": "2D ECS ゲームエンジン（planck + Pixi.js）。",
+      "tags": [
+        "ecs",
+        "physics",
+        "pixi"
+      ],
+      "status": "published",
+      "sourcePath": "lib/bubble-engine",
+      "links": {
+        "demo": null,
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/bubble-engine",
+        "docs": null
+      },
+      "related": [
+        "bubble-demo"
+      ],
+      "order": 110,
+      "portal": false,
+      "package": "@playground/bubble-engine"
+    },
+    {
+      "id": "canvas-style",
+      "kind": "lib",
+      "title": "Canvas Style",
+      "summary": "CSS-like styles + programmatic tree for Canvas UI (game HUDs, panels)。",
+      "tags": [
+        "canvas",
+        "ui",
+        "stylesheet"
+      ],
+      "status": "published",
+      "sourcePath": "lib/canvas-style",
+      "links": {
+        "demo": null,
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/canvas-style",
+        "docs": null
+      },
+      "related": [
+        "canvas-style-ui"
+      ],
+      "order": 120,
+      "portal": false,
+      "package": "@playground/canvas-style"
+    },
+    {
+      "id": "gen-ui-lib",
+      "kind": "lib",
+      "title": "Gen UI Library",
+      "summary": "Constrained generative UI — schema, validate, DOM render。",
+      "tags": [
+        "generative-ui",
+        "schema"
+      ],
+      "status": "published",
+      "sourcePath": "lib/gen-ui",
+      "links": {
+        "demo": null,
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/gen-ui",
+        "docs": null
+      },
+      "related": [
+        "gen-ui"
+      ],
+      "order": 130,
+      "portal": false,
+      "package": "@playground/gen-ui"
+    }
+  ]
+}

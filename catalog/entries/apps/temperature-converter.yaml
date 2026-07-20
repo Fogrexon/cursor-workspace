@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: temperature-converter
+kind: app
+title: 温度変換
+summary: 摂氏・華氏・ケルビンを相互に変換します。
+tags: [utility]
+status: published
+order: 50
+related: [theme]

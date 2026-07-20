@@ -1,0 +1,49 @@
+# catalog YAML → docs/api/catalog.json
+# PR / push でテスト + コミット済み JSON の同期チェック。
+# Pages デプロイ時は deploy-pages.yml 側でも再生成する。
+name: Catalog
+
+on:
+  pull_request:
+    paths:
+      - "catalog/**"
+      - "tools/workspace-catalog/**"
+      - "docs/api/catalog.json"
+      - ".github/workflows/catalog.yml"
+  push:
+    branches: [main]
+    paths:
+      - "catalog/**"
+      - "tools/workspace-catalog/**"
+      - "docs/api/catalog.json"
+      - ".github/workflows/catalog.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tools/workspace-catalog
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/workspace-catalog/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Check catalog.json is up to date
+        run: npm run check -- --root ../..

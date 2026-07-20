@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: theme
+kind: lib
+title: Theme
+summary: 全アプリ共通のデザイントークン（CSS）。
+package: "@playground/theme"
+tags: [css, design-tokens]
+status: published
+order: 100
+portal: false

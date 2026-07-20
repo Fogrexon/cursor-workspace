@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../tools/workspace-catalog/schema/workspace.schema.json
+
+id: cursor-workspace
+title: Cursor Playground
+description: Cursor で実装したアプリの実験場。各カードからアプリを開けます。
+locale: ja
+
+paths:
+  apps: apps
+  libs: lib
+  docs: docs
+  entries: catalog/entries
+
+pages:
+  baseUrl: https://fogrexon.github.io/cursor-workspace/
+  apiPath: api/catalog.json
+
+source:
+  provider: github
+  owner: Fogrexon
+  repo: cursor-workspace
+  branch: main
+  treeUrlTemplate: https://github.com/{owner}/{repo}/tree/{branch}/{path}
+
+defaults:
+  appSourcePath: "{apps}/{id}"
+  libSourcePath: "{libs}/{id}"
+  demoPath: "{id}/"

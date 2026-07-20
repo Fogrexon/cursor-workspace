@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://playground.local/workspace-catalog/entry.schema.json",
+  "title": "WorkspaceCatalogEntry",
+  "description": "Human-authored metadata for one app or library.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "title", "summary", "status"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "Stable id; usually the directory name under apps/ or lib/."
+    },
+    "kind": { "type": "string", "enum": ["app", "lib"] },
+    "title": { "type": "string", "minLength": 1 },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "description": "One-line description for portal cards and API consumers."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional longer description."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true,
+      "default": []
+    },
+    "status": {
+      "type": "string",
+      "enum": ["published", "draft", "local", "archived"],
+      "description": "published = on Pages portal; local = source-only / no demo; draft/archived = listed but filtered by consumers."
+    },
+    "package": {
+      "type": "string",
+      "description": "npm package name when applicable (esp. libs)."
+    },
+    "sourcePath": {
+      "type": "string",
+      "description": "Repo-relative source path. Defaults from workspace defaults + kind + id."
+    },
+    "demoPath": {
+      "type": ["string", "null"],
+      "description": "Path under Pages root (e.g. liquid-lab/). null disables demo link even if published."
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Absolute URL overrides. Omitted keys are resolved from templates.",
+      "properties": {
+        "demo": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] },
+        "docs": { "type": ["string", "null"] }
+      }
+    },
+    "related": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other entry ids (apps or libs).",
+      "default": []
+    },
+    "order": {
+      "type": "integer",
+      "description": "Portal sort key (ascending). Default 100."
+    },
+    "portal": {
+      "type": "boolean",
+      "description": "Include on the home portal. Default: true when status is published.",
+      "default": true
+    }
+  }
+}

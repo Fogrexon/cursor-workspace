@@ -49,8 +49,18 @@
     }
 
     header p {
-      margin: 0 0 var(--space-6);
+      margin: 0 0 var(--space-3);
       color: var(--color-text-muted);
+    }
+
+    header .meta {
+      margin: 0 0 var(--space-6);
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+    }
+
+    header .meta a {
+      color: var(--color-accent);
     }
 
     .grid {
@@ -60,7 +70,9 @@
     }
 
     .card {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
       padding: var(--space-4);
       background: var(--color-surface);
       border: 1px solid var(--color-border);
@@ -77,15 +89,52 @@
     }
 
     .card h2 {
-      margin: 0 0 var(--space-2);
+      margin: 0;
       font-size: 1.15rem;
+    }
+
+    .card h2 a {
       color: var(--color-accent);
+      text-decoration: none;
+    }
+
+    .card h2 a:hover {
+      color: var(--color-accent-hover);
     }
 
     .card p {
       margin: 0;
       font-size: 0.9rem;
       color: var(--color-text-muted);
+      flex: 1;
+    }
+
+    .card .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .card .tags li {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+
+    .card .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      font-size: 0.85rem;
+    }
+
+    .card .links a {
+      color: var(--color-accent);
     }
 
     .empty {
@@ -95,37 +144,143 @@
       text-align: center;
       color: var(--color-text-muted);
     }
+
+    .section-title {
+      margin: var(--space-6) 0 var(--space-3);
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <h1>Cursor Playground</h1>
-      <p>Cursor で実装したアプリの実験場。各カードからアプリを開けます。</p>
+      <h1 id="workspace-title">Cursor Playground</h1>
+      <p id="workspace-desc">読み込み中…</p>
+      <p class="meta" id="workspace-meta" hidden></p>
     </header>
 
-    <div class="grid">
-      <a class="card" href="./liquid-lab/">
-        <h2>Liquid Lab</h2>
-        <p>シミュレーション範囲を広げ、浅い水深で砂浜のような流体を試せるラボ。</p>
-      </a>
-      <a class="card" href="./city-chill/">
-        <h2>City Chill</h2>
-        <p>小さな村が大都会へ育つ様子を、アイソメ視点でただ眺める都市自動発展シミュレーター。</p>
-      </a>
-      <a class="card" href="./box2d-car-game/">
-        <h2>Box2D カーゲーム</h2>
-        <p>Box2D 物理エンジンで動く車を操作し、丘を越えてどこまで進めるか挑戦するヒルクライムゲーム。</p>
-      </a>
-      <a class="card" href="./bubble-demo/">
-        <h2>Angry Bubble</h2>
-        <p>bubble-engine 製のスリングショットデモ。ブロックを崩して豚をすべて倒せ。</p>
-      </a>
-      <a class="card" href="./temperature-converter/">
-        <h2>温度変換</h2>
-        <p>摂氏・華氏・ケルビンを相互に変換します。</p>
-      </a>
-    </div>
+    <h2 class="section-title" id="apps-heading" hidden>Apps</h2>
+    <div class="grid" id="apps-grid"></div>
+
+    <h2 class="section-title" id="libs-heading" hidden>Libraries</h2>
+    <div class="grid" id="libs-grid"></div>
+
+    <p class="empty" id="status">カタログを読み込んでいます…</p>
   </main>
+  <script>
+    function relativeDemoHref(demoUrl, pagesBaseUrl) {
+      if (!demoUrl) return null;
+      if (pagesBaseUrl && demoUrl.startsWith(pagesBaseUrl)) {
+        return "./" + demoUrl.slice(pagesBaseUrl.length);
+      }
+      try {
+        const u = new URL(demoUrl);
+        const parts = u.pathname.replace(/\/+$/, "").split("/");
+        const id = parts[parts.length - 1];
+        return id ? "./" + id + "/" : demoUrl;
+      } catch {
+        return demoUrl;
+      }
+    }
+
+    function cardHtml(item, pagesBaseUrl) {
+      const demoHref = relativeDemoHref(item.links.demo, pagesBaseUrl);
+      const title = demoHref
+        ? '<h2><a href="' +
+          escapeAttr(demoHref) +
+          '">' +
+          escapeHtml(item.title) +
+          "</a></h2>"
+        : "<h2>" + escapeHtml(item.title) + "</h2>";
+      const tags = (item.tags || [])
+        .map((t) => "<li>" + escapeHtml(t) + "</li>")
+        .join("");
+      const links = [];
+      if (demoHref) {
+        links.push('<a href="' + escapeAttr(demoHref) + '">開く</a>');
+      }
+      if (item.links.source) {
+        links.push(
+          '<a href="' +
+            escapeAttr(item.links.source) +
+            '" rel="noopener noreferrer" target="_blank">ソース</a>',
+        );
+      }
+      return (
+        '<article class="card">' +
+        title +
+        "<p>" +
+        escapeHtml(item.summary) +
+        "</p>" +
+        (tags ? '<ul class="tags">' + tags + "</ul>" : "") +
+        (links.length ? '<div class="links">' + links.join("") + "</div>" : "") +
+        "</article>"
+      );
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function escapeAttr(s) {
+      return escapeHtml(s).replace(/'/g, "&#39;");
+    }
+
+    async function main() {
+      const status = document.getElementById("status");
+      try {
+        const res = await fetch("./api/catalog.json", { cache: "no-cache" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const catalog = await res.json();
+
+        document.getElementById("workspace-title").textContent =
+          catalog.workspace.title;
+        document.getElementById("workspace-desc").textContent =
+          catalog.workspace.description || "";
+
+        const meta = document.getElementById("workspace-meta");
+        const bits = [];
+        bits.push(
+          '<a href="./api/catalog.json">catalog.json</a>（静的 API）',
+        );
+        if (catalog.workspace.source && catalog.workspace.source.url) {
+          bits.push(
+            '<a href="' +
+              escapeAttr(catalog.workspace.source.url) +
+              '" rel="noopener noreferrer" target="_blank">リポジトリ</a>',
+          );
+        }
+        meta.innerHTML = bits.join(" · ");
+        meta.hidden = false;
+
+        const apps = catalog.items.filter(
+          (i) => i.kind === "app" && i.portal,
+        );
+        const libs = catalog.items.filter((i) => i.kind === "lib");
+        const base = catalog.workspace.pagesBaseUrl;
+
+        const appsGrid = document.getElementById("apps-grid");
+        const libsGrid = document.getElementById("libs-grid");
+        appsGrid.innerHTML = apps.map((i) => cardHtml(i, base)).join("");
+        libsGrid.innerHTML = libs.map((i) => cardHtml(i, base)).join("");
+
+        document.getElementById("apps-heading").hidden = apps.length === 0;
+        document.getElementById("libs-heading").hidden = libs.length === 0;
+        status.hidden = true;
+      } catch (err) {
+        status.textContent =
+          "カタログの読み込みに失敗しました: " +
+          (err && err.message ? err.message : String(err));
+      }
+    }
+
+    main();
+  </script>
 </body>
 </html>

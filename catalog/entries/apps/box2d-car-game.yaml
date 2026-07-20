@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: box2d-car-game
+kind: app
+title: Box2D カーゲーム
+summary: Box2D 物理エンジンで動く車を操作し、丘を越えてどこまで進めるか挑戦するヒルクライムゲーム。
+tags: [game, physics, box2d]
+status: published
+order: 30

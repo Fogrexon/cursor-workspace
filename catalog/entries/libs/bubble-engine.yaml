@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: bubble-engine
+kind: lib
+title: Bubble Engine
+summary: 2D ECS ゲームエンジン（planck + Pixi.js）。
+package: "@playground/bubble-engine"
+tags: [ecs, physics, pixi]
+status: published
+order: 110
+portal: false
+related: [bubble-demo]

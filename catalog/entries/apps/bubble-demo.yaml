@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: bubble-demo
+kind: app
+title: Angry Bubble
+summary: bubble-engine 製のスリングショットデモ。ブロックを崩して豚をすべて倒せ。
+tags: [game, demo, pixi]
+status: published
+order: 40
+related: [bubble-engine]

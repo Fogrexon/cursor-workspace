@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: gen-ui-lib
+kind: lib
+title: Gen UI Library
+summary: Constrained generative UI — schema, validate, DOM render。
+package: "@playground/gen-ui"
+tags: [generative-ui, schema]
+status: published
+sourcePath: lib/gen-ui
+order: 130
+portal: false
+related: [gen-ui]

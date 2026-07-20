@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: city-chill
+kind: app
+title: City Chill
+summary: 小さな村が大都会へ育つ様子を、アイソメ視点でただ眺める都市自動発展シミュレーター。
+tags: [simulation, city, three]
+status: published
+order: 20
+related: [theme]

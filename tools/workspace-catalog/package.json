@@ -1,0 +1,28 @@
+{
+  "name": "@playground/workspace-catalog",
+  "version": "0.1.0",
+  "private": true,
+  "description": "YAML catalog → static JSON API for workspace-style repos (GitHub Pages friendly)",
+  "type": "module",
+  "bin": {
+    "workspace-catalog": "./bin/workspace-catalog.js"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema/*.json": "./schema/*.json"
+  },
+  "scripts": {
+    "build": "tsx src/cli.ts",
+    "check": "tsx src/cli.ts --check",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yaml": "^2.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.2",
+    "typescript": "~5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

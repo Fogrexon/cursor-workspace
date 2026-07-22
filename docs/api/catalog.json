@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-20T12:25:27.737Z",
+  "generatedAt": "2026-07-22T14:44:56.400Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -173,10 +173,35 @@
       "portal": true
     },
     {
+      "id": "graphim-editor",
+      "kind": "app",
+      "title": "Graphim Node Editor",
+      "summary": "WebGL2 エフェクト DAG を視覚編集し、Graphim でライブ実行するノードエディタ。",
+      "tags": [
+        "tool",
+        "webgl",
+        "shader",
+        "node-editor"
+      ],
+      "status": "published",
+      "sourcePath": "apps/graphim-editor",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/graphim-editor/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/graphim-editor",
+        "docs": null
+      },
+      "related": [
+        "graphim",
+        "graphim-demo"
+      ],
+      "order": 74,
+      "portal": true
+    },
+    {
       "id": "graphim-demo",
       "kind": "app",
       "title": "Graphim Demo",
-      "summary": "WebGL ノードベース画像エフェクト（graphim submodule）のライブデモ。",
+      "summary": "WebGL2 DAG 画像エフェクト（graphim submodule）のライブデモ。",
       "tags": [
         "demo",
         "webgl",
@@ -268,7 +293,7 @@
       "id": "graphim",
       "kind": "lib",
       "title": "Graphim",
-      "summary": "WebGL ノードベース画像エフェクトライブラリ（git submodule → Fogrexon/Graphim）。",
+      "summary": "WebGL2 宣言的 DAG 画像エフェクト（git submodule → Fogrexon/Graphim）。",
       "tags": [
         "webgl",
         "shader",

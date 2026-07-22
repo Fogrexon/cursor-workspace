@@ -1,0 +1,30 @@
+{
+  "name": "gen-ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Local Cursor SDK host for constrained generative UI (Pages not required)",
+  "scripts": {
+    "dev": "tsx src/server/index.ts",
+    "demo:mock": "cross-env GEN_UI_MOCK=1 tsx src/server/index.ts",
+    "build:lib": "npm run build --prefix ../../lib/gen-ui",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm test --prefix ../../lib/gen-ui"
+  },
+  "dependencies": {
+    "@cursor/sdk": "^1.0.23",
+    "@playground/gen-ui": "file:../../lib/gen-ui",
+    "@playground/theme": "file:../../lib/theme",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.15.30",
+    "@types/ws": "^8.18.1",
+    "cross-env": "^7.0.3",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "graphim-editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "@playground/theme": "file:../../lib/theme",
+    "graphim": "file:../../lib/graphim"
+  }
+}

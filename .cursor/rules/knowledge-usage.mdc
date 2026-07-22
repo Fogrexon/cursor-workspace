@@ -1,0 +1,21 @@
+---
+description: Use knowledge/ for product intent and incident lessons; capture via knowledge-capture skill
+alwaysApply: true
+---
+
+# Knowledge usage
+
+Non-code intent lives in `knowledge/` (not in `docs/` builds).
+
+## Must
+
+- Before shaping product behavior: read `knowledge/apps/<app>/` if it exists, else `knowledge/domain/`
+- Before repeating a known failure class: check `knowledge/incidents/lessons.md`
+- When the user states intent, non-goals, constraints, or an incident/regression → follow **knowledge-capture** skill and write files under `knowledge/`
+- Prefer regression **tests** as the incident barrier when reproducible; keep rules short
+
+## Must not
+
+- Treat code comments or git history as the only source of product intent
+- Close an incident fix without Prevention (test, rule, or skill)
+- Put long narratives into alwaysApply rules — link to `knowledge/` instead

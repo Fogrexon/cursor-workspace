@@ -14,15 +14,22 @@ describe('listEffects', () => {
     expect(list.map((e) => e.id)).toEqual([...EFFECT_IDS]);
   });
 
-  it('marks only wave as animated', () => {
+  it('marks animated effects', () => {
     const animated = listEffects().filter((e) => e.animated).map((e) => e.id);
-    expect(animated).toEqual(['wave']);
+    expect(animated).toEqual(['wave', 'trail']);
+  });
+
+  it('includes multi-input samples', () => {
+    const multi = listEffects().filter((e) => e.inputs >= 2);
+    expect(multi.length).toBeGreaterThanOrEqual(6);
+    expect(multi.some((e) => e.inputs === 3)).toBe(true);
   });
 });
 
 describe('isEffectId / getEffectLabel', () => {
   it('accepts known ids and rejects others', () => {
     expect(isEffectId('gray')).toBe(true);
+    expect(isEffectId('tripleLook')).toBe(true);
     expect(isEffectId('nope')).toBe(false);
   });
 
@@ -33,8 +40,9 @@ describe('isEffectId / getEffectLabel', () => {
 });
 
 describe('isAnimatedEffect', () => {
-  it('is true only for wave', () => {
+  it('is true for wave and trail', () => {
     expect(isAnimatedEffect('wave')).toBe(true);
+    expect(isAnimatedEffect('trail')).toBe(true);
     expect(isAnimatedEffect('blur')).toBe(false);
   });
 });

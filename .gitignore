@@ -1,8 +1,19 @@
 node_modules/
 dist/
 *.local
+.env
+.env.*
+!.env.example
 .DS_Store
 Thumbs.db
+
+# Scratch experiments (optional; not for published apps)
+local/
+terminals/
+mcps/
+tmp-*.txt
+tmp-*.json
+*.tmp
 
 # Blender backups / autosave
 *.blend1

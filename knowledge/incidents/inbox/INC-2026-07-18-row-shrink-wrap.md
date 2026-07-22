@@ -1,0 +1,13 @@
+# INC-2026-07-18-row-shrink-wrap
+- Status: mitigated
+- App / area: canvas-style / layout
+- Symptom: Settings Form で label が行幅いっぱいになり、value が右に寄らず UI がズレる
+- Trigger: `display: row` 内の非 flex・width 未指定の子を親の contentWidth でレイアウトした
+- Impact: ラベル+値の設定行など典型 HUD/フォームが崩れる
+- Root cause: row の主軸で auto 幅アイテムをコンテナ幅にストレッチしていた（flexbox の max-content 相当になっていなかった）
+- Fix: row 内の非 flex 子を `shrinkWrap` で intrinsic / min-width 基準に測る
+- Prevention:
+  - test: `layout.test.ts` Settings Form 相当の shrink-wrap + 行間整列アサーション
+  - rule:
+  - skill:
+- Do not: row の非 flex 子に親の全幅を availableWidth として渡して確定幅にする

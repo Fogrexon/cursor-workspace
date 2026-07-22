@@ -1,0 +1,17 @@
+{
+  "name": "@playground/canvas-style",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CSS-like styles + programmatic tree for Canvas UI (game HUDs, panels)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

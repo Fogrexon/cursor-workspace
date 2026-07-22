@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gen-ui host</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app__header">
+        <div class="brand">gen-ui</div>
+        <p class="tagline">Data-analysis generative UI · local filters, no LLM round-trip</p>
+        <div id="mode-badge" class="mode">connecting…</div>
+      </header>
+      <main class="app__main">
+        <section class="pane pane--ui">
+          <h2 class="pane__title">Generated UI</h2>
+          <div id="ui-root" class="ui-root"></div>
+        </section>
+        <section class="pane pane--chat">
+          <h2 class="pane__title">Agent</h2>
+          <div id="log" class="log" aria-live="polite"></div>
+          <form id="chat-form" class="chat-form">
+            <input
+              id="chat-input"
+              type="text"
+              placeholder="例: iOSの購入イベント推移を見せて"
+              autocomplete="off"
+              required
+            />
+            <button type="submit">Send</button>
+          </form>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

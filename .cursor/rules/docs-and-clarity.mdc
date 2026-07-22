@@ -1,0 +1,23 @@
+---
+description: Per-lib/app design docs, JSDoc on public APIs, and visibility-first structure
+globs: apps/**,lib/**
+alwaysApply: false
+---
+
+# Docs & code clarity
+
+Background: [knowledge/inbox/2026-07-18-docs-jsdoc-visibility.md](../../knowledge/inbox/2026-07-18-docs-jsdoc-visibility.md).
+Product intent stays in `knowledge/`; developer-facing design lives with the code.
+
+## Must
+
+- Each `lib/<name>/` and `apps/<name>/` has a `README.md`: purpose, public API / entry points, structure, how to run tests/build. Link to `knowledge/` for intent.
+- JSDoc on public surfaces: every `lib/` export, and each app's UI/logic entry functions. State what + why/constraints, not line-by-line narration.
+- Visibility-first structure: split by responsibility so directory + file names reveal intent (extends separation-of-concerns). Prefer small focused modules over one large file.
+- Update the README when the public API or structure changes.
+
+## Must not
+
+- Duplicate `knowledge/` intent verbatim into READMEs (link instead).
+- Add redundant comments that restate the code (see making_code_changes).
+- Grow a single file with mixed responsibilities to avoid creating a new module.

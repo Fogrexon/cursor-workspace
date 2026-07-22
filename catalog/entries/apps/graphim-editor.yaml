@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: graphim-editor
+kind: app
+title: Graphim Node Editor
+summary: WebGL2 エフェクト DAG を視覚編集し、Graphim でライブ実行するノードエディタ。
+tags: [tool, webgl, shader, node-editor]
+status: published
+order: 74
+related: [graphim, graphim-demo]

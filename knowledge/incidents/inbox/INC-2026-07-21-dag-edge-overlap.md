@@ -1,0 +1,13 @@
+# INC-2026-07-21-dag-edge-overlap
+- Status: mitigated
+- App / area: graphim-demo / DAG visualization
+- Symptom: 2入力・3入力の Merge が1入力に見える、または長いエッジが中間ノードを貫通する
+- Trigger: 複数エッジが同じポートを共有する、またはエッジが複数列を直線的にまたぐ DAG を表示する
+- Impact: 実際の分岐・合流構造と表示が一致せず、Graphim の複数入力能力を誤認する
+- Root cause: 単一ポートしかなく、全エッジを同じ曲線規則で結んだため、終端が重なり、長いエッジは中間列のノードを横切った
+- Fix: 個別ポートを等間隔に割り当て、複数列をまたぐエッジは上・下の専用バイパスレーンへ迂回
+- Prevention:
+  - test: `dagLayout.test.ts` で Bloom Glow の個別ポートと、Source→Mix の長い枝がバイパス経路になることを検証
+  - rule:
+  - skill:
+- Do not: 複数エッジを同一ポートへ描画したり、列を飛び越すエッジを中間ノード上へ直通させたりしない

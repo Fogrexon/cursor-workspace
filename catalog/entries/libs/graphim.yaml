@@ -3,7 +3,7 @@
 id: graphim
 kind: lib
 title: Graphim
-summary: WebGL ノードベース画像エフェクトライブラリ（git submodule → Fogrexon/Graphim）。
+summary: WebGL2 宣言的 DAG 画像エフェクト（git submodule → Fogrexon/Graphim）。
 package: graphim
 tags: [webgl, shader, image]
 status: published

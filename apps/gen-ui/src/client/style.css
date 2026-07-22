@@ -1,0 +1,522 @@
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.app__header {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.brand {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.mode {
+  justify-self: start;
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-accent);
+  border: 1px solid var(--color-border);
+}
+
+.app__main {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: var(--space-3);
+  min-height: 70vh;
+}
+
+@media (max-width: 860px) {
+  .app__main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pane {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pane__title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.ui-root {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-1);
+}
+
+.log {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  font-size: 0.9rem;
+}
+
+.log__item {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.log__item--user {
+  border-left: 3px solid var(--color-accent);
+}
+.log__item--agent {
+  border-left: 3px solid var(--color-success);
+}
+.log__item--system {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.log__item--error {
+  border-left: 3px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.chat-form {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chat-form input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  font: inherit;
+}
+
+.chat-form button,
+.gui-btn {
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font: inherit;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.chat-form button:hover,
+.gui-btn--primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.gui-btn--secondary {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.gui-btn--danger {
+  background: var(--color-danger);
+}
+
+.gui-screen__title {
+  margin: 0 0 var(--space-3);
+  font-size: 1.35rem;
+}
+
+.gui-stack {
+  display: flex;
+}
+.gui-stack--column {
+  flex-direction: column;
+}
+.gui-stack--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.gui-stack--gap-sm {
+  gap: var(--space-1);
+}
+.gui-stack--gap-md {
+  gap: var(--space-2);
+}
+.gui-stack--gap-lg {
+  gap: var(--space-4);
+}
+
+.gui-text {
+  margin: 0;
+}
+.gui-text--title {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.gui-text--heading {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.gui-text--muted {
+  color: var(--color-text-muted);
+}
+.gui-text--code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--color-bg);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.gui-form,
+.gui-dataview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.gui-dataview__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.gui-dataview__results {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.gui-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.9rem;
+  min-width: 10rem;
+}
+
+.gui-field__label {
+  color: var(--color-text-muted);
+}
+
+.gui-input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  padding: var(--space-2);
+  font: inherit;
+}
+
+.gui-input--checkbox {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.gui-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.gui-list__item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.gui-list__label {
+  font-weight: 600;
+}
+.gui-list__desc {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-top: var(--space-1);
+}
+
+.gui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+}
+.gui-table th,
+.gui-table td {
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  padding: var(--space-2);
+}
+.gui-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+
+.gui-metric {
+  min-width: 7rem;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+.gui-metric__label {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+.gui-metric__value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.gui-metric__delta {
+  color: var(--color-success);
+  font-size: 0.8rem;
+}
+
+.gui-badge {
+  display: inline-flex;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-surface-hover);
+}
+.gui-badge--ok {
+  color: var(--color-success);
+}
+.gui-badge--warn,
+.gui-badge--danger {
+  color: var(--color-danger);
+}
+
+.gui-callout {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.gui-callout--info {
+  border-color: var(--color-accent);
+}
+.gui-callout--ok {
+  border-color: var(--color-success);
+}
+.gui-callout--warn,
+.gui-callout--danger {
+  border-color: var(--color-danger);
+}
+.gui-callout__title {
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+.gui-divider {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-2) 0;
+}
+
+.gui-empty {
+  text-align: center;
+  padding: var(--space-5) var(--space-3);
+  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.gui-chart,
+.gui-datatable {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  padding: var(--space-3);
+}
+
+.gui-chart__title,
+.gui-datatable__title {
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.gui-chart__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.gui-chart__axis {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.gui-chart__bar,
+.gui-chart__dot {
+  fill: var(--color-accent);
+}
+
+.gui-chart__line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+}
+
+.gui-chart__label {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+  font-family: var(--font-sans);
+}
+
+.gui-calendar {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  padding: var(--space-3);
+}
+
+.gui-calendar__title {
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.gui-calendar__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.gui-calendar__legend-swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  border: 1px solid var(--color-border);
+}
+
+.gui-calendar__months {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.gui-calendar__month-title {
+  margin-bottom: var(--space-2);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.gui-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(2.4rem, 1fr));
+  gap: 4px;
+}
+
+.gui-calendar__weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  padding-bottom: 2px;
+}
+
+.gui-calendar__cell {
+  min-height: 2.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 0.7rem;
+}
+
+.gui-calendar__cell--empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.gui-calendar__cell--level-0 {
+  background: var(--color-surface);
+}
+
+.gui-calendar__cell--level-1 {
+  background: color-mix(in srgb, var(--color-accent) 20%, var(--color-surface));
+}
+
+.gui-calendar__cell--level-2 {
+  background: color-mix(in srgb, var(--color-accent) 40%, var(--color-surface));
+}
+
+.gui-calendar__cell--level-3 {
+  background: color-mix(in srgb, var(--color-accent) 65%, var(--color-surface));
+}
+
+.gui-calendar__cell--level-4 {
+  background: color-mix(in srgb, var(--color-accent) 90%, var(--color-surface));
+  color: var(--color-bg);
+}
+
+.gui-calendar__day {
+  font-weight: 600;
+}
+
+.gui-calendar__count {
+  font-size: 0.65rem;
+  opacity: 0.9;
+}
+
+.gui-tabs__list {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+.gui-tabs__tab {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  font: inherit;
+}
+.gui-tabs__tab[aria-selected="true"] {
+  background: var(--color-surface-hover);
+}

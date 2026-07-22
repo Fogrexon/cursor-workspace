@@ -1,0 +1,13 @@
+# INC-2026-07-22-graphim-editor-animation
+- Status: mitigated
+- App / area: graphim-editor / live preview
+- Symptom: `time` を使うシェーダーや Delay を含む DAG がライブプレビューで連続更新されない、または更新中であることが判別できない
+- Trigger: エディタ上のノード種別だけで連続描画の要否を判定する
+- Impact: 時間変化シェーダーの見た目を設計・確認できない
+- Root cause: 実行 DAG の shader / Delay を検査せず、Custom ノードの存在だけをアニメーション条件にしていた
+- Fix: コンパイル後の実行 DAG から `time` 参照と Delay を検出して `Graphim.animate()` を開始し、状態を `animating` と表示
+- Prevention:
+  - test: `editor.test.ts` で time shader、コメント内 time、Delay、静的 shader の判定を検証
+  - rule:
+  - skill:
+- Do not: エディタ上の表示用 node kind だけからランタイムの連続描画要否を推測しない

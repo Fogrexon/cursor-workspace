@@ -1,0 +1,13 @@
+# INC-2026-07-22-shared-image-source-control
+- Status: mitigated
+- App / area: graphim-editor / image sources
+- Symptom: 複数の Image source が同じ Main image 設定を共同管理しているように見え、ノードごとの画像設定ができない
+- Trigger: 出力プレビュー側にグローバルな Main image 変更操作を置く
+- Impact: 画像を別々の Source へ割り当てる操作経路が不明確になり、複数入力 DAG を設計できない
+- Root cause: Source 単位のアセット選択と、Graphim の内部 Main image 差し替えを同時に公開していた
+- Fix: グローバル画像変更を廃止し、各 Source ノードへ専用 `Set image` 操作と独立アセット参照を配置
+- Prevention:
+  - test: `editor.test.ts` で2つの Source の params が独立していることを検証
+  - rule:
+  - skill:
+- Do not: Source 単位で管理すべき画像を、出力プレビュー側の共有設定として公開しない

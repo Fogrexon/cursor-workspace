@@ -227,7 +227,7 @@ async function main() {
 
   const vite = await createViteServer({
     root: path.join(rootDir, "src/client"),
-    configFile: path.join(rootDir, "vite.config.ts"),
+    configFile: path.join(rootDir, "vite.host.config.ts"),
     server: { middlewareMode: true },
     appType: "custom",
     resolve: {

@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Local Cursor SDK host for constrained generative UI (Pages not required)",
+  "description": "Gen UI library Pages demo + local Cursor SDK host (no API keys on Pages)",
   "scripts": {
     "dev": "tsx src/server/index.ts",
     "demo:mock": "cross-env GEN_UI_MOCK=1 tsx src/server/index.ts",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
     "build:lib": "npm run build --prefix ../../lib/gen-ui",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm test --prefix ../../lib/gen-ui"

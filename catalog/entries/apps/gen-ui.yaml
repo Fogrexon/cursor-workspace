@@ -3,10 +3,8 @@
 id: gen-ui
 kind: app
 title: Gen UI
-summary: Cursor SDK 連携の生成 UI ホスト。ローカル実行向け（GitHub Pages 非公開）。
-tags: [generative-ui, cursor-sdk, local]
-status: local
-demoPath: null
-portal: false
-order: 80
+summary: ライブラリ静的デモ（Pages）。Cursor SDK ライブはローカル専用・APIキーは GitHub に置かない。
+tags: [generative-ui, schema, demo]
+status: published
+order: 76
 related: [gen-ui-lib]

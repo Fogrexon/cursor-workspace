@@ -4,13 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
-/** Static library demo for GitHub Pages (no API keys). */
+/** Vite middleware config for the local Cursor SDK / mock host. */
 export default defineConfig({
-  base: '/cursor-workspace/gen-ui/',
-  build: {
-    outDir: path.resolve(rootDir, '../../docs/gen-ui'),
-    emptyOutDir: true,
-  },
+  root: path.resolve(rootDir, 'src/client'),
+  publicDir: path.resolve(rootDir, 'public'),
   resolve: {
     alias: {
       '@playground/gen-ui': path.resolve(rootDir, '../../lib/gen-ui/src/index.ts'),

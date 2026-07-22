@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-22T14:44:56.400Z",
+  "generatedAt": "2026-07-22T15:10:36.317Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -225,24 +225,24 @@
       "id": "gen-ui",
       "kind": "app",
       "title": "Gen UI",
-      "summary": "Cursor SDK 連携の生成 UI ホスト。ローカル実行向け（GitHub Pages 非公開）。",
+      "summary": "ライブラリ静的デモ（Pages）。Cursor SDK ライブはローカル専用・APIキーは GitHub に置かない。",
       "tags": [
         "generative-ui",
-        "cursor-sdk",
-        "local"
+        "schema",
+        "demo"
       ],
-      "status": "local",
+      "status": "published",
       "sourcePath": "apps/gen-ui",
       "links": {
-        "demo": null,
+        "demo": "https://fogrexon.github.io/cursor-workspace/gen-ui/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/gen-ui",
         "docs": null
       },
       "related": [
         "gen-ui-lib"
       ],
-      "order": 80,
-      "portal": false
+      "order": 76,
+      "portal": true
     },
     {
       "id": "theme",

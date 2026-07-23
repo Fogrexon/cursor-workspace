@@ -1660,7 +1660,7 @@ LLM judgeを使う場合、人間とのagreement、position bias、model-family 
 | Coding | bounded loop / fixed DAG | repo container/microVM | hidden tests、lint、typecheck | FS+process | transactional edit |
 | Web | Gym-style loop | browser + resettable backend | backend state、receipt | session snapshot | DOM/AXTree/image選択 |
 | Research | staged DAG + bounded search | network sandbox | citation entailment、coverage | artifact中心 | source provenance |
-| Enterprise API | fixed workflow優先 | typed connector | read-back、business invariant | saga log | R2/R3 approval |
+| Enterprise API | fixed workflow優先 | typed connector | read-back、business invariant | saga log | T2/T3 approval |
 | ML/R&D | long-running loop | GPU sandbox | score-vs-time、best artifact | process+GPU metadata | zombie/VRAM supervisor |
 | Tree search/RL | branch scheduler | rollbackable microVM | node reward + final test | Delta checkpoint tree | P3機能 |
 | Multi-agent | central ledger | tool-scoped workers | independent verifier | artifact handoff | 同一予算baseline必須 |
@@ -1676,7 +1676,7 @@ LLM judgeを使う場合、人間とのagreement、position bias、model-family 
 | 指標 | 初期目標 |
 |---|---:|
 | trace event欠損 | 0 |
-| R2/R3未承認副作用 | 0 |
+| T2/T3未承認副作用 | 0 |
 | cross-tenant data leak | 0 |
 | hard budget超過 | 上限比1%未満 |
 | cancel反映 p95 | 5秒以内 |

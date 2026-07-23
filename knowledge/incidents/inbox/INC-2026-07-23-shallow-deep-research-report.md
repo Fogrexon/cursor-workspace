@@ -1,5 +1,5 @@
 # INC-2026-07-23-shallow-deep-research-report
-- Status: open
+- Status: mitigated
 - App / area: knowledge / research reports
 - Symptom: deep research依頼に対し、読者の意思決定分析、再現可能な論文選定、論文別architecture分析、証拠から提言への追跡が不足した要約レポートを提出した。内部要件メモも第二のレポートのように案内した
 - Trigger: 「最新かつ高影響な10論文」という表面的な要件から先に候補を選び、読者が知りたい「エージェント実行基盤アーキテクチャ」をscreening基準として固定しなかった

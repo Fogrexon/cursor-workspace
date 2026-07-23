@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-22T15:10:36.317Z",
+  "generatedAt": "2026-07-23T16:12:26.982Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -53,6 +53,29 @@
       "links": {
         "demo": "https://fogrexon.github.io/cursor-workspace/city-chill/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/city-chill",
+        "docs": null
+      },
+      "related": [
+        "theme"
+      ],
+      "order": 20,
+      "portal": true
+    },
+    {
+      "id": "report-viewer",
+      "kind": "app",
+      "title": "Knowledge Report Viewer",
+      "summary": "knowledge/ の調査レポート・意思決定・インシデントを Markdown で閲覧します。",
+      "tags": [
+        "docs",
+        "markdown",
+        "research"
+      ],
+      "status": "published",
+      "sourcePath": "apps/report-viewer",
+      "links": {
+        "demo": "https://fogrexon.github.io/cursor-workspace/report-viewer/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/report-viewer",
         "docs": null
       },
       "related": [

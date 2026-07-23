@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: report-viewer
+kind: app
+title: Knowledge Report Viewer
+summary: knowledge/ の調査レポート・意思決定・インシデントを Markdown で閲覧します。
+tags: [docs, markdown, research]
+status: published
+order: 20
+related: [theme]

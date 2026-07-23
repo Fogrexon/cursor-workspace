@@ -1047,6 +1047,18 @@ StateManagerは各checkpointを`(filesystem layer configuration, process image/t
 | 実装侵襲 | host proxy + eBPF + C/R | custom FS + CRIU + microVM |
 | 推奨時期 | 長時間runのP2 | tree search / RLのP3 |
 
+### 実装判断
+
+採用する:
+
+- checkpointをconversation、filesystem、processのatomic pairとして扱う考え方
+- search treeとcheckpoint indexを対応させること
+- inference待ち時間へのcheckpoint I/O overlap
+
+限定採用:
+
+- custom filesystem、CRIU template、Firecracker統合は、branch/rollbackが実測bottleneckであり、通常snapshotより十分な改善が確認できた場合だけP3で導入する。
+
 ---
 
 ## 3.10 Natural-Language Agent Harnesses

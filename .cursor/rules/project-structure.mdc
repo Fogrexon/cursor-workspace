@@ -17,7 +17,8 @@ docs/                # Pages root (commit builds)
   index.html         # portal (loads api/catalog.json)
   api/catalog.json   # static catalog API (generated)
   <app-name>/        # build output
-knowledge/           # product intent, domain, incidents (not Pages)
+knowledge/           # project-specific intent, domain, incidents (not Pages)
+reports/             # user-requested deep research deliverables (Report Viewer)
 blender/             # Blender assets (see blender rule)
 tools/workspace-catalog/  # reusable YAML → JSON catalog builder
 ```
@@ -28,10 +29,12 @@ tools/workspace-catalog/  # reusable YAML → JSON catalog builder
 - Add/rename/remove apps or libs → update `catalog/entries/` and regenerate `docs/api/catalog.json` (`cd tools/workspace-catalog && npm run build -- --root ../..`)
 - Shared code → `lib/` (separation-of-concerns); UI tokens → `lib/theme` (ui-style skill)
 - New apps → follow create-app skill
-- Business intent / incident lessons → `knowledge/` (knowledge-capture skill); not into `docs/` builds
+- Project-specific business intent / incident lessons → `knowledge/` (knowledge-capture skill); not into `docs/` builds
+- User-requested deep research → `reports/` with frontmatter (reports rule / deep-research skill)
 
 ## Must not
 
 - Hand-edit `docs/` builds (except `docs/index.html`, `docs/.nojekyll`, and generated `docs/api/catalog.json` via the catalog tool)
 - Commit `node_modules/` or build intermediates
 - Hand-maintain portal card lists in HTML — cards come from `catalog.json`
+- Mix deep research report bodies into `knowledge/`

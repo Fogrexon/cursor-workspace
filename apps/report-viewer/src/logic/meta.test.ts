@@ -4,78 +4,77 @@ import {
   extractDate,
   extractSummary,
   extractTitle,
-  knowledgePathFromModuleKey,
+  isViewableReportPath,
   reportIdFromPath,
+  reportsPathFromModuleKey,
 } from './meta';
 
-describe('knowledgePathFromModuleKey', () => {
-  it('extracts path after /knowledge/', () => {
+describe('reportsPathFromModuleKey', () => {
+  it('extracts path after /reports/', () => {
     expect(
-      knowledgePathFromModuleKey(
-        '/workspace/knowledge/research/foo.md',
+      reportsPathFromModuleKey(
+        '/workspace/reports/deep-research/foo.md',
       ),
-    ).toBe('research/foo.md');
+    ).toBe('deep-research/foo.md');
   });
 
   it('returns null when marker missing', () => {
-    expect(knowledgePathFromModuleKey('/tmp/foo.md')).toBeNull();
+    expect(reportsPathFromModuleKey('/workspace/knowledge/x.md')).toBeNull();
+  });
+});
+
+describe('isViewableReportPath', () => {
+  it('accepts report markdown and rejects README', () => {
+    expect(isViewableReportPath('deep-research/a.md')).toBe(true);
+    expect(isViewableReportPath('README.md')).toBe(false);
+    expect(isViewableReportPath('deep-research/readme.md')).toBe(false);
   });
 });
 
 describe('categoryFromPath', () => {
-  it('maps known segments', () => {
-    expect(categoryFromPath('research/a.md')).toBe('research');
-    expect(categoryFromPath('incidents/inbox/x.md')).toBe('incidents');
-  });
-
-  it('falls back to other', () => {
-    expect(categoryFromPath('misc/a.md')).toBe('other');
+  it('uses first path segment', () => {
+    expect(categoryFromPath('deep-research/a.md')).toBe('deep-research');
   });
 });
 
-describe('extractTitle', () => {
-  it('uses first ATX heading', () => {
-    expect(extractTitle('# Hello\n\nbody', 'x')).toBe('Hello');
-  });
+describe('extractTitle / extractSummary / extractDate', () => {
+  const md = `---
+title: Front Title
+summary: Front summary
+date: 2026-01-02
+---
 
-  it('falls back to id leaf', () => {
-    expect(extractTitle('no heading', 'research/my-report')).toBe('my report');
-  });
-});
+# Body Title
 
-describe('extractSummary', () => {
-  it('skips headings and tables then takes paragraph', () => {
-    const md = `# Title
+| 調査日 | 2026-07-23 |
 
-| a | b |
-|---|---|
-| 1 | 2 |
-
-これは要約になる段落です。
-
-次の段落は使わない。
+Body summary paragraph.
 `;
-    expect(extractSummary(md)).toContain('これは要約になる段落です');
+
+  it('prefers heading in body for title fallback helper', () => {
+    expect(extractTitle('# Only\n', 'x/y')).toBe('Only');
+    expect(extractTitle('no heading', 'deep-research/my-report')).toBe(
+      'my report',
+    );
   });
 
-  it('returns empty for heading-only docs', () => {
-    expect(extractSummary('# Only')).toBe('');
+  it('skips frontmatter when extracting summary from body', () => {
+    expect(extractSummary(md)).toContain('Body summary paragraph');
   });
-});
 
-describe('extractDate', () => {
-  it('reads 調査日 table cell', () => {
-    const md = '| 調査日 | 2026-07-23 |';
-    expect(extractDate(md, 'x.md')).toBe('2026-07-23');
+  it('prefers frontmatter date', () => {
+    expect(extractDate(md, 'deep-research/x.md')).toBe('2026-01-02');
   });
 
   it('falls back to path date', () => {
-    expect(extractDate('', 'research/2026-07-18-note.md')).toBe('2026-07-18');
+    expect(extractDate('# Hi\n', 'deep-research/2026-07-18-note.md')).toBe(
+      '2026-07-18',
+    );
   });
 });
 
 describe('reportIdFromPath', () => {
   it('strips .md', () => {
-    expect(reportIdFromPath('research/a.md')).toBe('research/a');
+    expect(reportIdFromPath('deep-research/a.md')).toBe('deep-research/a');
   });
 });

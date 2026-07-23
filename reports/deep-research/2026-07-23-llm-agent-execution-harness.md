@@ -1,3 +1,20 @@
+---
+title: LLMエージェント実行基盤アーキテクチャ調査
+summary: 最新研究10本から導く、エージェント実行・評価・運用ハーネスの参照設計と導入判断。
+date: 2026-07-23
+category: deep-research
+tags:
+  - llm
+  - agent
+  - harness
+  - architecture
+  - runtime
+  - evaluation
+status: final
+audience: エージェント開発基盤の設計・投資・技術選定を行う人
+lang: ja
+---
+
 # LLMエージェント実行基盤アーキテクチャ調査
 
 ## 最新研究10本から導く、実装・評価・運用ハーネスの参照設計

@@ -4,7 +4,7 @@
 
 ## Active
 
-- （未登録）
+- deep research レポート本体を `knowledge/` に蓄積すること（→ `reports/`）
 
 ## Retired
 

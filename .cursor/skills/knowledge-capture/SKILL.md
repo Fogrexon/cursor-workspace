@@ -23,8 +23,10 @@ Layout: see [knowledge/README.md](../../../knowledge/README.md). Templates: [ref
 | Platform/ops/legal constraints not obvious in code | `domain/constraints.md` or inbox |
 | Bug, regression, "same mistake again", costly debug | `incidents/inbox/` + `lessons.md` + `catalog.md` |
 | Why we chose A over B | `decisions/` |
+| User-requested deep research report body | **`reports/`**（ここではない。reports rule / deep-research skill） |
 
-Do **not** dump implementation how-tos here — those belong in skills/rules.
+Do **not** dump implementation how-tos here — those belong in skills/rules.  
+Do **not** store deep research survey deliverables in `knowledge/`.
 
 ## Capture workflow (requirements)
 

@@ -1,0 +1,29 @@
+---
+description: Deep research reports live under reports/ with required frontmatter; not in knowledge/
+alwaysApply: true
+---
+
+# Reports (deep research)
+
+User-requested deep research and similar survey deliverables live under `reports/`, not `knowledge/`.
+
+```
+reports/
+  README.md
+  deep-research/YYYY-MM-DD-<slug>.md
+```
+
+Background: [knowledge/decisions/0004-reports-vs-knowledge.md](../../knowledge/decisions/0004-reports-vs-knowledge.md), [reports/README.md](../../reports/README.md).
+
+## Must
+
+- Deep research 主成果物 → `reports/deep-research/`（deep-research-report-ja skill）
+- 各レポート先頭に YAML frontmatter（`title`, `summary`, `date`, `category`, `tags` 必須）
+- Report Viewer は `reports/**/*.md` のみ表示（`README.md` 除外）
+- 新しいレポート追加後は `apps/report-viewer` で `npm run build`（Pages にバンドル）
+
+## Must not
+
+- deep research 本文を `knowledge/` に置かない（knowledge はプロジェクト固有の意図・制約・インシデント）
+- frontmatter なしでビューワー向けレポートを追加しない
+- Report Viewer に `knowledge/` を glob しない

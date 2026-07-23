@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-23T16:12:26.982Z",
+  "generatedAt": "2026-07-23T16:18:15.453Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -64,8 +64,8 @@
     {
       "id": "report-viewer",
       "kind": "app",
-      "title": "Knowledge Report Viewer",
-      "summary": "knowledge/ の調査レポート・意思決定・インシデントを Markdown で閲覧します。",
+      "title": "Report Viewer",
+      "summary": "reports/ の deep research 成果物を Markdown で閲覧・検索します。",
       "tags": [
         "docs",
         "markdown",

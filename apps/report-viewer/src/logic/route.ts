@@ -1,16 +1,5 @@
 import type { ReportCategory, Route } from '../types';
 
-const CATEGORIES = new Set<string>([
-  'all',
-  'research',
-  'decisions',
-  'domain',
-  'incidents',
-  'inbox',
-  'apps',
-  'other',
-]);
-
 /** location.hash を Route にパースする。 */
 export function parseHash(hash: string): Route {
   const raw = hash.startsWith('#') ? hash.slice(1) : hash;
@@ -23,13 +12,11 @@ export function parseHash(hash: string): Route {
   const params = new URLSearchParams(queryPart);
 
   if (pathPart === '' || pathPart === 'list') {
-    const category = params.get('category') ?? 'all';
+    const category = (params.get('category') ?? 'all').trim() || 'all';
     return {
       view: 'list',
       query: params.get('q') ?? '',
-      category: CATEGORIES.has(category)
-        ? (category as ReportCategory | 'all')
-        : 'all',
+      category: category as ReportCategory | 'all',
     };
   }
 

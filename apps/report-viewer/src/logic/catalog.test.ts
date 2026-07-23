@@ -1,44 +1,79 @@
 import { describe, expect, it } from 'vitest';
-import { buildCatalog, filterReports, findReport } from './catalog';
+import {
+  buildCatalog,
+  filterReports,
+  findReport,
+  listCategories,
+} from './catalog';
 
 const modules = {
-  '/workspace/knowledge/research/2026-07-23-demo.md': `# Demo Report
+  '/workspace/reports/deep-research/2026-07-23-demo.md': `---
+title: Demo Report
+summary: Front summary about harness
+date: 2026-07-23
+category: deep-research
+tags:
+  - harness
+  - llm
+status: final
+audience: architects
+---
 
-| 調査日 | 2026-07-23 |
+# Ignored Title
 
-本文の要約になります。
+Body text.
 `,
-  '/workspace/knowledge/domain/constraints.md': `# Constraints
+  '/workspace/reports/README.md': `# Reports\n\nIgnore me.\n`,
+  '/workspace/reports/notes/older.md': `---
+title: Older
+summary: Old note
+date: 2026-01-01
+category: notes
+tags: [ops]
+---
 
-制約の説明です。
+# Older
 `,
+  '/workspace/knowledge/domain/constraints.md': `# Should not load\n`,
 };
 
 describe('buildCatalog', () => {
-  it('builds sorted metas from module map', () => {
+  it('loads only viewable files under /reports/', () => {
     const docs = buildCatalog(modules);
-    expect(docs).toHaveLength(2);
-    expect(docs[0]!.id).toBe('research/2026-07-23-demo');
-    expect(docs[0]!.category).toBe('research');
-    expect(docs[0]!.date).toBe('2026-07-23');
-    expect(docs[1]!.id).toBe('domain/constraints');
+    expect(docs.map((d) => d.id)).toEqual([
+      'deep-research/2026-07-23-demo',
+      'notes/older',
+    ]);
+    expect(docs[0]).toMatchObject({
+      title: 'Demo Report',
+      summary: 'Front summary about harness',
+      category: 'deep-research',
+      tags: ['harness', 'llm'],
+      status: 'final',
+      audience: 'architects',
+    });
+    expect(docs[0]!.markdown.startsWith('# Ignored Title')).toBe(true);
   });
 });
 
-describe('filterReports', () => {
+describe('filterReports / listCategories', () => {
   const docs = buildCatalog(modules);
 
-  it('filters by category and query', () => {
-    expect(filterReports(docs, '', 'research')).toHaveLength(1);
-    expect(filterReports(docs, '制約', 'all')).toHaveLength(1);
-    expect(filterReports(docs, 'missing', 'all')).toHaveLength(0);
+  it('filters by category, free text, and tag:', () => {
+    expect(filterReports(docs, '', 'deep-research')).toHaveLength(1);
+    expect(filterReports(docs, 'harness', 'all')).toHaveLength(1);
+    expect(filterReports(docs, 'tag:ops', 'all')).toHaveLength(1);
+    expect(filterReports(docs, 'tag:missing', 'all')).toHaveLength(0);
+  });
+
+  it('lists categories', () => {
+    expect(listCategories(docs)).toEqual(['deep-research', 'notes']);
   });
 });
 
 describe('findReport', () => {
   it('finds by id', () => {
     const docs = buildCatalog(modules);
-    expect(findReport(docs, 'domain/constraints')?.title).toBe('Constraints');
-    expect(findReport(docs, 'nope')).toBeUndefined();
+    expect(findReport(docs, 'notes/older')?.title).toBe('Older');
   });
 });

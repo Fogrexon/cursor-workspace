@@ -1,6 +1,6 @@
 # Knowledge
 
-コード解析だけでは分からない **ビジネス要件・ドメイン意図・インシデント教訓** を置く場所。
+コード解析だけでは分からない **このリポジトリ固有の** ビジネス要件・ドメイン意図・インシデント教訓を置く場所。
 
 | 置き場 | 役割 |
 |--------|------|
@@ -10,7 +10,12 @@
 | `decisions/` | 判断の履歴（ADR） |
 | `incidents/` | やらかしの記録と再発防止 |
 
-運用手順は `.cursor/skills/knowledge-capture/SKILL.md`。読むきっかけは `.cursor/rules/knowledge-usage.mdc`。
+## 置かないもの
+
+- ユーザー要請の **deep research レポート本体** → `reports/`（Report Viewer の対象）
+- 実装手順・コーディング how-to → `.cursor/skills/` / `.cursor/rules/`
+
+運用手順は `.cursor/skills/knowledge-capture/SKILL.md`。読むきっかけは `.cursor/rules/knowledge-usage.mdc`。調査成果物の境界は `.cursor/rules/reports.mdc`。
 
 ## 昇格ルール
 

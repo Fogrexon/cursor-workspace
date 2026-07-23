@@ -2,9 +2,10 @@
 
 See `.cursor/rules/` and `.cursor/skills/` for project conventions.
 
-## Knowledge
+## Knowledge vs Reports
 
 - Product intent, domain constraints, ADRs, and incident lessons: `knowledge/`
+- User-requested deep research deliverables: `reports/` (see reports rule + deep-research-report-ja skill)
 - Capture / distill / promote: knowledge-capture skill
 - Coding how-to stays in skills; hard Must/Must-not stays in rules (thin)
 

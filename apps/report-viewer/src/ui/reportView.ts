@@ -4,7 +4,7 @@ import { extractToc } from '../logic/toc';
 import { renderMarkdown } from '../logic/markdown';
 import { serializeHash } from '../logic/route';
 import { escapeHtml } from './escape';
-import { CATEGORY_LABEL } from './listView';
+import { categoryLabel } from './listView';
 
 /** 詳細画面 HTML（TOC + 本文）。 */
 export function renderReportView(doc: ReportDoc): string {
@@ -13,6 +13,15 @@ export function renderReportView(doc: ReportDoc): string {
   const back = serializeHash({ view: 'list', query: '', category: 'all' });
   const date = doc.date
     ? `<time datetime="${escapeHtml(doc.date)}">${escapeHtml(doc.date)}</time>`
+    : '';
+  const tags = doc.tags
+    .map((t) => `<span class="tag tag--soft">${escapeHtml(t)}</span>`)
+    .join('');
+  const status = doc.status
+    ? `<span class="tag">${escapeHtml(doc.status)}</span>`
+    : '';
+  const audience = doc.audience
+    ? `<p class="report__audience">想定読者: ${escapeHtml(doc.audience)}</p>`
     : '';
 
   return `
@@ -27,9 +36,14 @@ export function renderReportView(doc: ReportDoc): string {
       <div class="report__main">
         <header class="report__header">
           <div class="report-card__meta">
-            <span class="tag">${CATEGORY_LABEL[doc.category]}</span>
+            <span class="tag">${escapeHtml(categoryLabel(doc.category))}</span>
+            ${status}
             ${date}
           </div>
+          <h1 class="report__title">${escapeHtml(doc.title)}</h1>
+          <p class="report-card__summary">${escapeHtml(doc.summary)}</p>
+          ${audience}
+          <div class="report-card__tags">${tags}</div>
           <p class="report-card__path"><code>${escapeHtml(doc.path)}</code></p>
         </header>
         <div class="markdown-body">
@@ -42,7 +56,6 @@ export function renderReportView(doc: ReportDoc): string {
 
 function renderToc(items: TocItem[]): string {
   if (!items.length) return '<p class="toc__empty">見出しがありません</p>';
-  // hash ルーティングと衝突しないよう、href ではなく data-target + scrollIntoView を使う
   return `<ul>${items
     .map(
       (item) =>

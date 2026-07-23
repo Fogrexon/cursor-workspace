@@ -1,13 +1,13 @@
 import type { ReportCategory, Route } from '../types';
 import { reports } from '../content/reports';
-import { filterReports, findReport } from '../logic/catalog';
+import { filterReports, findReport, listCategories } from '../logic/catalog';
 import { parseHash, serializeHash } from '../logic/route';
 import { renderListView } from './listView';
 import { renderReportView } from './reportView';
 
 /**
- * Knowledge レポートビューアを #app にマウントする。
- * ルーティングは location.hash（GitHub Pages 向け）。
+ * Deep research レポートビューアを #app にマウントする。
+ * 表示対象は reports/ のみ。ルーティングは location.hash。
  */
 export function mountApp(root: HTMLElement): void {
   const render = (): void => {
@@ -31,6 +31,7 @@ function shell(route: Route): string {
           reports: filterReports(reports, route.query, route.category),
           query: route.query,
           category: route.category,
+          categories: listCategories(reports),
           totalCount: reports.length,
         })
       : (() => {
@@ -50,8 +51,8 @@ function shell(route: Route): string {
       <header class="top">
         <a class="back" href="../">← ポータルへ戻る</a>
         <div class="top__titles">
-          <h1>Knowledge Report Viewer</h1>
-          <p>knowledge/ 配下の調査レポート・意思決定・インシデントを Markdown で閲覧します。</p>
+          <h1>Report Viewer</h1>
+          <p>reports/ 配下の deep research 成果物を Markdown で閲覧します（knowledge/ は含みません）。</p>
         </div>
       </header>
       ${body}

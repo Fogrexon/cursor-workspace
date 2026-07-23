@@ -1,23 +1,23 @@
-# Knowledge Report Viewer — product intent
+# Report Viewer — product intent
 
 ## Fantasy
 
-`knowledge/` に置いた調査レポートや意思決定メモを、GitHub Pages 上でそのまま読める。Markdown ソースを複製せず、ビルド時に取り込み、目次付きで読める。
+ユーザー要請で書いた deep research を、GitHub Pages 上で検索・目次付きで読める。プロジェクト固有メモ（knowledge）と混ざらない。
 
 ## Success
 
-- research / decisions / domain / incidents / inbox / apps の Markdown が一覧できる
-- 本文が GFM（表・コード）付きでレンダリングされる
-- ハーネス調査レポートなど長文でも TOC で移動できる
+- 表示対象は `reports/` 以下のレポート Markdown のみ
+- frontmatter（title / summary / date / category / tags）で一覧・検索できる
+- 長文でも TOC で移動できる
 
 ## Non-goals
 
+- `knowledge/`（意図・インシデント・ADR）の閲覧 UI
 - Markdown のオンライン編集・CMS
-- サーバー側検索インデックス
-- knowledge 以外のドキュメント取り込み（スキルやルール本体）
+- サーバー側全文検索インデックス
 
 ## Constraints
 
 - 静的 GitHub Pages（hash ルーティング）
-- UI は `lib/theme` トークンに従う
-- 表示対象はリポジトリ内 first-party Markdown（サニタイズは防御層）
+- UI は `lib/theme` トークン
+- レポート追加時は必須 frontmatter（`.cursor/rules/reports.mdc`）

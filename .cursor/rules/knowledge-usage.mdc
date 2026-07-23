@@ -5,7 +5,9 @@ alwaysApply: true
 
 # Knowledge usage
 
-Non-code intent lives in `knowledge/` (not in `docs/` builds).
+Non-code **project-specific** intent lives in `knowledge/` (not in `docs/` builds).
+
+Deep research survey deliverables are **not** knowledge — see `.cursor/rules/reports.mdc` and `reports/`.
 
 ## Must
 
@@ -19,3 +21,4 @@ Non-code intent lives in `knowledge/` (not in `docs/` builds).
 - Treat code comments or git history as the only source of product intent
 - Close an incident fix without Prevention (test, rule, or skill)
 - Put long narratives into alwaysApply rules — link to `knowledge/` instead
+- Put user-requested deep research report bodies into `knowledge/`（→ `reports/`）

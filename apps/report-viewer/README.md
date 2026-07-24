@@ -1,6 +1,7 @@
-# Knowledge Report Viewer
+# Research Report Viewer
 
-`knowledge/` 配下の Markdown（研究レポート、意思決定、インシデントなど）をブラウザで閲覧する静的アプリです。
+`research/` 配下の調査レポート（Markdown）をブラウザで閲覧する静的アプリです。  
+`knowledge/`（実装意図・インシデント）は対象外です。
 
 ## 使い方
 
@@ -16,7 +17,7 @@ npm run build  # → docs/report-viewer/
 
 ```
 src/
-  content/reports.ts   # knowledge/**/*.md を Vite glob で取り込み
+  content/reports.ts   # research/**/*.md を Vite glob で取り込み
   logic/               # catalog / markdown / route / toc（純関数）
   ui/                  # 一覧・詳細 DOM
 ```
@@ -27,8 +28,10 @@ src/
 
 ## 公開
 
-ポータルカードは `catalog/entries/apps/report-viewer.yaml` 経由。カタログ再生成:
+ポータルでは `portalSection: research` により Apps とは別枠。カタログ再生成:
 
 ```bash
 cd tools/workspace-catalog && npm run build -- --root ../..
 ```
+
+意図: [knowledge/apps/report-viewer/product-intent.md](../../knowledge/apps/report-viewer/product-intent.md)

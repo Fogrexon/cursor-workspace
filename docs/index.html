@@ -164,6 +164,9 @@
     <h2 class="section-title" id="apps-heading" hidden>Apps</h2>
     <div class="grid" id="apps-grid"></div>
 
+    <h2 class="section-title" id="research-heading" hidden>Research</h2>
+    <div class="grid" id="research-grid"></div>
+
     <h2 class="section-title" id="libs-heading" hidden>Libraries</h2>
     <div class="grid" id="libs-grid"></div>
 
@@ -259,18 +262,26 @@
         meta.innerHTML = bits.join(" · ");
         meta.hidden = false;
 
+        const sectionOf = (i) => i.portalSection || "playground";
         const apps = catalog.items.filter(
-          (i) => i.kind === "app" && i.portal,
+          (i) => i.kind === "app" && i.portal && sectionOf(i) === "playground",
+        );
+        const research = catalog.items.filter(
+          (i) => i.kind === "app" && i.portal && sectionOf(i) === "research",
         );
         const libs = catalog.items.filter((i) => i.kind === "lib");
         const base = catalog.workspace.pagesBaseUrl;
 
         const appsGrid = document.getElementById("apps-grid");
+        const researchGrid = document.getElementById("research-grid");
         const libsGrid = document.getElementById("libs-grid");
         appsGrid.innerHTML = apps.map((i) => cardHtml(i, base)).join("");
+        researchGrid.innerHTML = research.map((i) => cardHtml(i, base)).join("");
         libsGrid.innerHTML = libs.map((i) => cardHtml(i, base)).join("");
 
         document.getElementById("apps-heading").hidden = apps.length === 0;
+        document.getElementById("research-heading").hidden =
+          research.length === 0;
         document.getElementById("libs-heading").hidden = libs.length === 0;
         status.hidden = true;
       } catch (err) {

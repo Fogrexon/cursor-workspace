@@ -81,3 +81,4 @@ npm run build -- --root ../..
 
 Spec / reuse in other repos: `tools/workspace-catalog/README.md`.
 Local-only apps (no Pages): `status: local`, `demoPath: null`, `portal: false`.
+Research tooling (not a playground demo): `portalSection: research`（ポータルの Research 枠。Apps と混在させない）。

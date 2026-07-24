@@ -1,10 +1,10 @@
 import { buildCatalog, type ReportDoc } from '../logic/catalog';
 
 /**
- * knowledge/ 配下の Markdown をビルド時にバンドルする。
+ * research/ 配下の Markdown をビルド時にバンドルする。
  * パスは Vite が解決できるよう、このファイルからの相対指定。
  */
-const modules = import.meta.glob('../../../../knowledge/**/*.md', {
+const modules = import.meta.glob('../../../../research/**/*.md', {
   query: '?raw',
   import: 'default',
   eager: true,

@@ -2,9 +2,10 @@
 
 id: report-viewer
 kind: app
-title: Knowledge Report Viewer
-summary: knowledge/ の調査レポート・意思決定・インシデントを Markdown で閲覧します。
+title: Research Report Viewer
+summary: research/ の調査レポートを Markdown で閲覧します（knowledge は対象外）。
 tags: [docs, markdown, research]
 status: published
-order: 20
+portalSection: research
+order: 10
 related: [theme]

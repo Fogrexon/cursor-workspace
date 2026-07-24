@@ -71,6 +71,7 @@ export function assertWorkspace(raw: unknown, ctx = "workspace"): WorkspaceConfi
 
 const STATUSES = new Set(["published", "draft", "local", "archived"]);
 const KINDS = new Set(["app", "lib"]);
+const PORTAL_SECTIONS = new Set(["playground", "research"]);
 
 export function assertEntry(raw: unknown, ctx = "entry"): EntryConfig {
   if (!isRecord(raw)) throw new Error(`${ctx}: must be an object`);
@@ -103,6 +104,18 @@ export function assertEntry(raw: unknown, ctx = "entry"): EntryConfig {
     entry.order = raw.order;
   }
   if (typeof raw.portal === "boolean") entry.portal = raw.portal;
+
+  if (raw.portalSection !== undefined) {
+    if (
+      typeof raw.portalSection !== "string" ||
+      !PORTAL_SECTIONS.has(raw.portalSection)
+    ) {
+      throw new Error(
+        `${ctx}: portalSection must be "playground" or "research"`,
+      );
+    }
+    entry.portalSection = raw.portalSection as EntryConfig["portalSection"];
+  }
 
   if (raw.tags !== undefined) {
     if (!Array.isArray(raw.tags) || !raw.tags.every((t) => typeof t === "string")) {

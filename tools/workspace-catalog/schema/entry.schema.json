@@ -71,6 +71,12 @@
       "type": "boolean",
       "description": "Include on the home portal. Default: true when status is published.",
       "default": true
+    },
+    "portalSection": {
+      "type": "string",
+      "enum": ["playground", "research"],
+      "description": "Portal frame for published apps. playground = Apps grid; research = Research grid (separate from demos). Default: playground.",
+      "default": "playground"
     }
   }
 }

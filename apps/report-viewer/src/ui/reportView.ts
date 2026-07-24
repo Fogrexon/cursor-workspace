@@ -4,13 +4,12 @@ import { extractToc } from '../logic/toc';
 import { renderMarkdown } from '../logic/markdown';
 import { serializeHash } from '../logic/route';
 import { escapeHtml } from './escape';
-import { CATEGORY_LABEL } from './listView';
 
 /** 詳細画面 HTML（TOC + 本文）。 */
 export function renderReportView(doc: ReportDoc): string {
   const toc = extractToc(doc.markdown);
   const body = renderMarkdown(doc.markdown);
-  const back = serializeHash({ view: 'list', query: '', category: 'all' });
+  const back = serializeHash({ view: 'list', query: '' });
   const date = doc.date
     ? `<time datetime="${escapeHtml(doc.date)}">${escapeHtml(doc.date)}</time>`
     : '';
@@ -27,7 +26,7 @@ export function renderReportView(doc: ReportDoc): string {
       <div class="report__main">
         <header class="report__header">
           <div class="report-card__meta">
-            <span class="tag">${CATEGORY_LABEL[doc.category]}</span>
+            <span class="tag">research</span>
             ${date}
           </div>
           <p class="report-card__path"><code>${escapeHtml(doc.path)}</code></p>
@@ -40,13 +39,14 @@ export function renderReportView(doc: ReportDoc): string {
   `;
 }
 
-function renderToc(items: TocItem[]): string {
-  if (!items.length) return '<p class="toc__empty">見出しがありません</p>';
-  // hash ルーティングと衝突しないよう、href ではなく data-target + scrollIntoView を使う
-  return `<ul>${items
+function renderToc(items: readonly TocItem[]): string {
+  if (!items.length) {
+    return '<p class="toc__empty">見出しがありません</p>';
+  }
+  return items
     .map(
       (item) =>
-        `<li class="toc__item toc__item--h${item.level}"><button type="button" class="toc__link" data-target="${escapeHtml(item.id)}">${escapeHtml(item.text)}</button></li>`,
+        `<button type="button" class="toc__link toc__link--h${item.level}" data-target="${escapeHtml(item.id)}">${escapeHtml(item.text)}</button>`,
     )
-    .join('')}</ul>`;
+    .join('');
 }

@@ -1,26 +1,10 @@
-import type { ReportCategory } from '../types';
-
-const CATEGORIES = new Set<ReportCategory>([
-  'research',
-  'decisions',
-  'domain',
-  'incidents',
-  'inbox',
-  'apps',
-]);
-
-/** import.meta.glob のキーから knowledge 相対パスを取り出す。 */
-export function knowledgePathFromModuleKey(moduleKey: string): string | null {
-  const marker = '/knowledge/';
-  const idx = moduleKey.replaceAll('\\', '/').lastIndexOf(marker);
+/** import.meta.glob のキーから research 相対パスを取り出す。 */
+export function researchPathFromModuleKey(moduleKey: string): string | null {
+  const marker = '/research/';
+  const normalized = moduleKey.replaceAll('\\', '/');
+  const idx = normalized.lastIndexOf(marker);
   if (idx === -1) return null;
-  return moduleKey.slice(idx + marker.length);
-}
-
-export function categoryFromPath(path: string): ReportCategory {
-  const head = path.split('/')[0] ?? '';
-  if (CATEGORIES.has(head as ReportCategory)) return head as ReportCategory;
-  return 'other';
+  return normalized.slice(idx + marker.length);
 }
 
 export function reportIdFromPath(path: string): string {

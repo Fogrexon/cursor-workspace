@@ -102,6 +102,7 @@ describe("buildCatalog", () => {
       "https://github.com/acme/demo/tree/main/apps/liquid-lab",
     );
     expect(app.portal).toBe(true);
+    expect(app.portalSection).toBe("playground");
 
     const lib = catalog.items[1]!;
     expect(lib.portal).toBe(false);
@@ -112,6 +113,26 @@ describe("buildCatalog", () => {
     expect(local.portal).toBe(false);
     expect(local.links.demo).toBeNull();
     expect(local.links.source).toContain("apps/gen-ui");
+  });
+
+  it("honors portalSection research", () => {
+    const catalog = buildCatalog(
+      workspace,
+      [
+        {
+          id: "report-viewer",
+          kind: "app",
+          title: "Research Report Viewer",
+          summary: "Reports",
+          status: "published",
+          portalSection: "research",
+          order: 1,
+        },
+      ],
+      "2026-01-01T00:00:00.000Z",
+    );
+    expect(catalog.items[0]!.portalSection).toBe("research");
+    expect(catalog.items[0]!.portal).toBe(true);
   });
 
   it("rejects unknown related ids", () => {

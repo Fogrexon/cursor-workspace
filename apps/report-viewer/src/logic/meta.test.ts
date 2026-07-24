@@ -1,35 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import {
-  categoryFromPath,
   extractDate,
   extractSummary,
   extractTitle,
-  knowledgePathFromModuleKey,
   reportIdFromPath,
+  researchPathFromModuleKey,
 } from './meta';
 
-describe('knowledgePathFromModuleKey', () => {
-  it('extracts path after /knowledge/', () => {
+describe('researchPathFromModuleKey', () => {
+  it('extracts path after /research/', () => {
     expect(
-      knowledgePathFromModuleKey(
-        '/workspace/knowledge/research/foo.md',
-      ),
-    ).toBe('research/foo.md');
+      researchPathFromModuleKey('/workspace/research/2026-07-23-foo.md'),
+    ).toBe('2026-07-23-foo.md');
   });
 
   it('returns null when marker missing', () => {
-    expect(knowledgePathFromModuleKey('/tmp/foo.md')).toBeNull();
-  });
-});
-
-describe('categoryFromPath', () => {
-  it('maps known segments', () => {
-    expect(categoryFromPath('research/a.md')).toBe('research');
-    expect(categoryFromPath('incidents/inbox/x.md')).toBe('incidents');
-  });
-
-  it('falls back to other', () => {
-    expect(categoryFromPath('misc/a.md')).toBe('other');
+    expect(researchPathFromModuleKey('/workspace/knowledge/foo.md')).toBeNull();
   });
 });
 
@@ -39,7 +25,7 @@ describe('extractTitle', () => {
   });
 
   it('falls back to id leaf', () => {
-    expect(extractTitle('no heading', 'research/my-report')).toBe('my report');
+    expect(extractTitle('no heading', 'my-report')).toBe('my report');
   });
 });
 
@@ -70,12 +56,12 @@ describe('extractDate', () => {
   });
 
   it('falls back to path date', () => {
-    expect(extractDate('', 'research/2026-07-18-note.md')).toBe('2026-07-18');
+    expect(extractDate('', '2026-07-18-note.md')).toBe('2026-07-18');
   });
 });
 
 describe('reportIdFromPath', () => {
   it('strips .md', () => {
-    expect(reportIdFromPath('research/a.md')).toBe('research/a');
+    expect(reportIdFromPath('2026-07-23-a.md')).toBe('2026-07-23-a');
   });
 });

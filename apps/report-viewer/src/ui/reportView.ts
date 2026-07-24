@@ -19,10 +19,10 @@ export function renderReportView(doc: ReportDoc): string {
 
   return `
     <article class="report">
-      <details class="toc" aria-label="目次"${tocOpen ? ' open' : ''}>
+      <details class="ds-surface toc" aria-label="目次"${tocOpen ? ' open' : ''}>
         <summary class="toc__summary">目次</summary>
         <div class="toc__panel">
-          <a class="toc__back" href="${back}">← 一覧へ</a>
+          <a class="ds-nav-link toc__back" href="${back}">← 一覧へ</a>
           <nav class="toc__nav">
             ${renderToc(toc)}
           </nav>
@@ -30,13 +30,13 @@ export function renderReportView(doc: ReportDoc): string {
       </details>
       <div class="report__main">
         <header class="report__header">
-          <div class="report-card__meta">
-            <span class="tag">research</span>
+          <div class="ds-meta">
+            <span class="ds-tag">research</span>
             ${date}
           </div>
           <p class="report-card__path"><code>${escapeHtml(doc.path)}</code></p>
         </header>
-        <div class="markdown-body">
+        <div class="ds-surface markdown-body">
           ${body}
         </div>
       </div>

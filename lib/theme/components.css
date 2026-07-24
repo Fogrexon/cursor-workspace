@@ -1,0 +1,255 @@
+/*
+ * Shared design-system primitives.
+ * Requires theme.css tokens. Apps: import after '@playground/theme/theme.css'.
+ */
+
+.ds-page {
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding:
+    max(var(--space-5), env(safe-area-inset-top))
+    max(var(--space-3), env(safe-area-inset-right))
+    max(var(--space-6), env(safe-area-inset-bottom))
+    max(var(--space-3), env(safe-area-inset-left));
+}
+
+.ds-page--wide {
+  max-width: var(--content-wide);
+}
+
+@media (min-width: 720px) {
+  .ds-page {
+    padding-block: var(--space-6);
+    padding-inline: var(--space-4);
+  }
+}
+
+.ds-stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ds-stack--lg {
+  gap: var(--space-5);
+}
+
+.ds-section-label {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.ds-title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+.ds-title--display {
+  font-size: var(--text-display);
+}
+
+.ds-lede {
+  margin: 0;
+  max-width: 36rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+}
+
+.ds-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: color var(--transition);
+}
+
+.ds-nav-link:hover {
+  color: var(--color-action-hover);
+}
+
+.ds-surface {
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+}
+
+.ds-surface--pad {
+  padding: var(--space-4);
+}
+
+.ds-surface--interactive {
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    transform var(--transition),
+    box-shadow var(--transition);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ds-surface--interactive:hover {
+    background: var(--color-surface-hover);
+    border-color: var(--mint-a40);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+}
+
+.ds-surface--interactive:active {
+  transform: translateY(0);
+}
+
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--control-pad-x);
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: var(--btn-bg-ghost);
+  color: var(--btn-fg-ghost);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    transform var(--transition);
+}
+
+.ds-btn:hover {
+  color: var(--color-action-hover);
+  border-color: var(--color-action);
+}
+
+.ds-btn--primary {
+  background: var(--btn-bg-primary);
+  color: var(--btn-fg-primary);
+  border-color: transparent;
+}
+
+.ds-btn--primary:hover {
+  background: var(--btn-bg-primary-hover);
+  color: var(--btn-fg-primary);
+  border-color: transparent;
+}
+
+.ds-btn--ghost {
+  border-color: var(--btn-border-ghost);
+  color: var(--color-text);
+}
+
+.ds-btn--ghost:hover {
+  border-color: var(--color-action);
+  color: var(--color-action-hover);
+}
+
+.ds-btn--lg {
+  min-height: var(--control-height-lg);
+}
+
+.ds-field {
+  width: 100%;
+  min-height: var(--control-height-lg);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--field-border);
+  border-radius: var(--control-radius);
+  background: var(--field-bg);
+  color: var(--field-fg);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.ds-field::placeholder {
+  color: var(--field-placeholder);
+}
+
+.ds-field:focus {
+  outline: none;
+  border-color: var(--color-action);
+  box-shadow: var(--shadow-focus);
+}
+
+.ds-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--tag-bg);
+  color: var(--tag-fg);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ds-tag--muted {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.ds-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.ds-meta a {
+  color: var(--color-action);
+}
+
+.ds-meta a:hover {
+  color: var(--color-action-hover);
+}
+
+.ds-empty {
+  padding: var(--space-5) var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.ds-rise {
+  animation: ds-rise var(--motion-slow) var(--ease-out) both;
+}
+
+@keyframes ds-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-rise,
+  .ds-surface--interactive {
+    animation: none;
+    transition: none;
+  }
+}

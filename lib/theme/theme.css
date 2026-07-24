@@ -1,62 +1,164 @@
 /*
- * cursor-playground 共通デザイントークン
- * トンマナの詳細は .cursor/skills/ui-style/SKILL.md を参照。
- * トークンが不足する場合はここに追加する(アプリ側でのハードコード禁止)。
+ * @playground/theme — design tokens (primitive → semantic → component)
+ * Components: ./components.css
+ * Spec: knowledge/decisions/0004-design-system-layers.md
+ * Skill: .cursor/skills/ui-style/SKILL.md
  */
 
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap");
 
 :root {
-  /* 色: インク基調 + ミントアクセント（紫系インディゴは使わない） */
-  --color-bg: #090c10;
-  --color-surface: #121820;
-  --color-surface-hover: #1a222d;
-  --color-border: #2a3544;
-  --color-text: #eef3f7;
-  --color-text-muted: #8b9aab;
-  --color-accent: #3ecf8e;
-  --color-accent-hover: #63dba5;
-  --color-accent-text: #04110a;
-  --color-accent-muted: rgb(62 207 142 / 0.14);
-  --color-danger: #ff6b7a;
-  --color-success: #3ecf8e;
+  /* ── Primitive: raw palette (do not use in apps) ── */
+  --ink-950: #070a0e;
+  --ink-900: #0b1016;
+  --ink-850: #10161f;
+  --ink-800: #161d28;
+  --ink-700: #1e2734;
+  --ink-600: #2a3544;
+  --ink-400: #7d8c9e;
+  --ink-200: #c7d0db;
+  --ink-50: #f2f5f8;
 
-  /* 余白: 8px グリッド */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 16px;
-  --space-4: 24px;
-  --space-5: 32px;
-  --space-6: 48px;
+  --mint-500: #2fbf82;
+  --mint-400: #3ecf8e;
+  --mint-300: #6adba8;
+  --mint-950: #04110a;
 
-  /* レイアウト */
-  --content-max: 960px;
-  --content-wide: 1100px;
+  --rose-400: #ff6b7a;
+  --sky-400: #6aa8ff;
+
+  --white-a04: rgb(255 255 255 / 0.04);
+  --white-a06: rgb(255 255 255 / 0.06);
+  --black-a28: rgb(0 0 0 / 0.28);
+  --black-a40: rgb(0 0 0 / 0.4);
+  --mint-a12: rgb(62 207 142 / 0.12);
+  --mint-a22: rgb(62 207 142 / 0.22);
+  --mint-a40: rgb(62 207 142 / 0.4);
+  --sky-a10: rgb(106 168 255 / 0.1);
+
+  --font-family-sans: "Manrope", "Noto Sans JP", system-ui, sans-serif;
+  --font-family-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --space-raw-1: 0.25rem; /* 4 */
+  --space-raw-2: 0.5rem; /* 8 */
+  --space-raw-3: 1rem; /* 16 */
+  --space-raw-4: 1.5rem; /* 24 */
+  --space-raw-5: 2rem; /* 32 */
+  --space-raw-6: 3rem; /* 48 */
+  --space-raw-7: 4rem; /* 64 */
+
+  --radius-raw-sm: 0.5rem;
+  --radius-raw-md: 0.875rem;
+  --radius-raw-lg: 1.25rem;
+
+  /* ── Semantic: intent (apps use these) ── */
+  --color-bg: var(--ink-950);
+  --color-bg-elevated: var(--ink-900);
+  --color-surface: var(--ink-850);
+  --color-surface-hover: var(--ink-800);
+  --color-border: var(--ink-600);
+  --color-border-strong: var(--ink-400);
+
+  --color-text: var(--ink-50);
+  --color-text-muted: var(--ink-400);
+  --color-text-subtle: var(--ink-200);
+
+  --color-action: var(--mint-400);
+  --color-action-hover: var(--mint-300);
+  --color-action-pressed: var(--mint-500);
+  --color-action-text: var(--mint-950);
+  --color-action-muted: var(--mint-a12);
+
+  --color-danger: var(--rose-400);
+  --color-success: var(--mint-400);
+  --color-info: var(--sky-400);
+
+  /* back-compat aliases (older apps) */
+  --color-accent: var(--color-action);
+  --color-accent-hover: var(--color-action-hover);
+  --color-accent-text: var(--color-action-text);
+  --color-accent-muted: var(--color-action-muted);
+
+  --space-1: var(--space-raw-1);
+  --space-2: var(--space-raw-2);
+  --space-3: var(--space-raw-3);
+  --space-4: var(--space-raw-4);
+  --space-5: var(--space-raw-5);
+  --space-6: var(--space-raw-6);
+  --space-7: var(--space-raw-7);
+
+  --content-max: 60rem;
+  --content-wide: 68.75rem;
   --page-pad-inline: max(var(--space-3), env(safe-area-inset-left));
   --page-pad-inline-end: max(var(--space-3), env(safe-area-inset-right));
 
-  /* 形状 */
-  --radius: 14px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 0 rgb(255 255 255 / 0.04), 0 10px 28px rgb(0 0 0 / 0.38);
-  --shadow-sm: 0 1px 0 rgb(255 255 255 / 0.03), 0 4px 14px rgb(0 0 0 / 0.28);
-  --transition: 160ms ease;
+  --radius-sm: var(--radius-raw-sm);
+  --radius: var(--radius-raw-md);
+  --radius-lg: var(--radius-raw-lg);
 
-  /* タイポグラフィ */
-  --font-sans: "Manrope", "Noto Sans JP", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --shadow-sm: 0 1px 0 var(--white-a04), 0 4px 14px var(--black-a28);
+  --shadow: 0 1px 0 var(--white-a06), 0 12px 32px var(--black-a40);
+  --shadow-focus: 0 0 0 3px var(--mint-a22);
+
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.35rem;
-  --text-2xl: clamp(1.75rem, 4vw, 2.25rem);
+  --text-2xl: clamp(1.75rem, 1.4rem + 1.4vw, 2.35rem);
+  --text-display: clamp(2rem, 1.5rem + 2vw, 2.75rem);
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.6;
+  --tracking-tight: -0.03em;
+  --tracking-label: 0.12em;
+
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --transition: var(--motion-base) var(--ease-standard);
+
+  /* ── Component: control contracts ── */
+  --control-height: 2.75rem; /* 44 */
+  --control-height-lg: 3rem; /* 48 */
+  --control-pad-x: var(--space-3);
+  --control-radius: var(--radius-sm);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--color-action);
+
+  --btn-bg-primary: var(--color-action);
+  --btn-bg-primary-hover: var(--color-action-hover);
+  --btn-fg-primary: var(--color-action-text);
+  --btn-bg-ghost: transparent;
+  --btn-fg-ghost: var(--color-text);
+  --btn-border-ghost: var(--color-border);
+
+  --surface-bg: rgb(16 22 31 / 0.92);
+  --surface-border: var(--color-border);
+  --surface-radius: var(--radius);
+  --surface-shadow: var(--shadow-sm);
+
+  --field-bg: var(--color-surface);
+  --field-border: var(--color-border);
+  --field-fg: var(--color-text);
+  --field-placeholder: var(--color-text-muted);
+
+  --tag-bg: var(--color-action-muted);
+  --tag-fg: var(--color-action-hover);
 
   color-scheme: dark;
 }
 
-/* 共通ベーススタイル */
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -68,30 +170,30 @@ body {
   margin: 0;
   min-height: 100dvh;
   background:
-    radial-gradient(900px 480px at 12% -8%, rgb(62 207 142 / 0.1), transparent 55%),
-    radial-gradient(720px 420px at 100% 0%, rgb(72 130 200 / 0.08), transparent 50%),
-    var(--color-bg);
+    radial-gradient(980px 520px at 8% -12%, var(--mint-a12), transparent 58%),
+    radial-gradient(760px 440px at 100% -4%, var(--sky-a10), transparent 52%),
+    linear-gradient(180deg, var(--ink-900) 0%, var(--color-bg) 42%);
   background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-sans);
   font-size: var(--text-md);
-  line-height: 1.6;
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: var(--color-accent);
+  color: var(--color-action);
   text-decoration: none;
   transition: color var(--transition);
 }
 
 a:hover {
-  color: var(--color-accent-hover);
+  color: var(--color-action-hover);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 button,
@@ -104,5 +206,13 @@ textarea {
 @media (max-width: 640px) {
   body {
     background-attachment: scroll;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 1ms;
+    --motion-base: 1ms;
+    --motion-slow: 1ms;
   }
 }

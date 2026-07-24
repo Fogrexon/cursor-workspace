@@ -17,9 +17,9 @@ export function renderListView(model: ListViewModel): string {
         ? `<time datetime="${escapeHtml(r.date)}">${escapeHtml(r.date)}</time>`
         : '';
       return `
-        <a class="report-card" href="${href}">
-          <div class="report-card__meta">
-            <span class="tag">research</span>
+        <a class="ds-surface ds-surface--pad ds-surface--interactive report-card" href="${href}">
+          <div class="ds-meta">
+            <span class="ds-tag">research</span>
             ${date}
           </div>
           <h2 class="report-card__title">${escapeHtml(r.title)}</h2>
@@ -30,11 +30,12 @@ export function renderListView(model: ListViewModel): string {
     .join('');
 
   return `
-    <section class="list">
+    <section class="list ds-stack">
       <div class="toolbar">
         <label class="search">
           <span class="sr-only">検索</span>
           <input
+            class="ds-field"
             id="report-search"
             type="search"
             placeholder="タイトル・本文要約・パスで検索"
@@ -44,7 +45,7 @@ export function renderListView(model: ListViewModel): string {
       </div>
       <p class="list-count">${model.reports.length} / ${model.totalCount} 件</p>
       <div class="report-grid">
-        ${cards || '<p class="empty">該当するレポートがありません。</p>'}
+        ${cards || '<p class="ds-empty">該当するレポートがありません。</p>'}
       </div>
     </section>
   `;

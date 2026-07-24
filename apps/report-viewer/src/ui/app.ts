@@ -46,21 +46,21 @@ function shell(route: Route): string {
           const doc = findReport(reports, route.id);
           if (!doc) {
             return `
-              <section class="missing">
+              <section class="ds-empty missing">
                 <p>レポートが見つかりません: <code>${route.id}</code></p>
-                <a href="${serializeHash({ view: 'list', query: '' })}">一覧へ戻る</a>
+                <a class="ds-nav-link" href="${serializeHash({ view: 'list', query: '' })}">一覧へ戻る</a>
               </section>`;
           }
           return renderReportView(doc);
         })();
 
   return `
-    <div class="app-shell">
-      <header class="top">
-        <a class="back" href="../">← ポータルへ戻る</a>
+    <div class="ds-page ds-page--wide app-shell">
+      <header class="top ds-stack">
+        <a class="ds-nav-link" href="../">← ポータルへ戻る</a>
         <div class="top__titles">
-          <h1>Research Report Viewer</h1>
-          <p>research/ 配下の調査レポートを Markdown で閲覧します。</p>
+          <h1 class="ds-title">Research Report Viewer</h1>
+          <p class="ds-lede">research/ 配下の調査レポートを Markdown で閲覧します。</p>
         </div>
       </header>
       ${body}

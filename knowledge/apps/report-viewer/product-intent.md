@@ -21,7 +21,7 @@
 ## Constraints
 
 - 静的 GitHub Pages（hash ルーティング）
-- UI は `lib/theme` トークンに従う（ポータルと同系の現代的ダーク＋ミント）
+- UI は `lib/theme` デザインシステム（Semantic トークン + `.ds-*`）に従う
 - スマホでも読めること（一覧のタッチ領域、TOC は狭い幅で折りたたみ可能）
 - 表示対象は `research/` の first-party Markdown（サニタイズは防御層）
 - catalog では `portalSection: research` で Apps と分離する

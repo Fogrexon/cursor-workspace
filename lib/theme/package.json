@@ -1,10 +1,11 @@
 {
   "name": "@playground/theme",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "cursor-playground 全アプリ共通のデザイントークン",
+  "description": "cursor-playground design system: tokens + ds-* primitives",
   "exports": {
     ".": "./theme.css",
-    "./theme.css": "./theme.css"
+    "./theme.css": "./theme.css",
+    "./components.css": "./components.css"
   }
 }

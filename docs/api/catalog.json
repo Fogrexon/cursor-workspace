@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-23T16:12:26.982Z",
+  "generatedAt": "2026-07-24T00:32:11.728Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
     "description": "Cursor で実装したアプリの実験場。各カードからアプリを開けます。",
     "locale": "ja",
-    "pagesBaseUrl": "https://fogrexon.github.io/cursor-workspace/",
-    "apiUrl": "https://fogrexon.github.io/cursor-workspace/api/catalog.json",
+    "pagesBaseUrl": "https://cursor-workspace-mu.vercel.app/",
+    "apiUrl": "https://cursor-workspace-mu.vercel.app/api/catalog.json",
     "source": {
       "provider": "github",
       "owner": "Fogrexon",
@@ -30,7 +30,7 @@
       "status": "published",
       "sourcePath": "apps/liquid-lab",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/liquid-lab/",
+        "demo": "https://cursor-workspace-mu.vercel.app/liquid-lab/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/liquid-lab",
         "docs": null
       },
@@ -51,7 +51,7 @@
       "status": "published",
       "sourcePath": "apps/city-chill",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/city-chill/",
+        "demo": "https://cursor-workspace-mu.vercel.app/city-chill/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/city-chill",
         "docs": null
       },
@@ -74,7 +74,7 @@
       "status": "published",
       "sourcePath": "apps/report-viewer",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/report-viewer/",
+        "demo": "https://cursor-workspace-mu.vercel.app/report-viewer/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/report-viewer",
         "docs": null
       },
@@ -97,7 +97,7 @@
       "status": "published",
       "sourcePath": "apps/box2d-car-game",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/box2d-car-game/",
+        "demo": "https://cursor-workspace-mu.vercel.app/box2d-car-game/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/box2d-car-game",
         "docs": null
       },
@@ -118,7 +118,7 @@
       "status": "published",
       "sourcePath": "apps/bubble-demo",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/bubble-demo/",
+        "demo": "https://cursor-workspace-mu.vercel.app/bubble-demo/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/bubble-demo",
         "docs": null
       },
@@ -139,7 +139,7 @@
       "status": "published",
       "sourcePath": "apps/temperature-converter",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/temperature-converter/",
+        "demo": "https://cursor-workspace-mu.vercel.app/temperature-converter/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/temperature-converter",
         "docs": null
       },
@@ -162,7 +162,7 @@
       "status": "published",
       "sourcePath": "apps/openworld-flight",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/openworld-flight/",
+        "demo": "https://cursor-workspace-mu.vercel.app/openworld-flight/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/openworld-flight",
         "docs": null
       },
@@ -185,7 +185,7 @@
       "status": "published",
       "sourcePath": "apps/canvas-style-ui",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/canvas-style-ui/",
+        "demo": "https://cursor-workspace-mu.vercel.app/canvas-style-ui/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/canvas-style-ui",
         "docs": null
       },
@@ -209,7 +209,7 @@
       "status": "published",
       "sourcePath": "apps/graphim-editor",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/graphim-editor/",
+        "demo": "https://cursor-workspace-mu.vercel.app/graphim-editor/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/graphim-editor",
         "docs": null
       },
@@ -234,7 +234,7 @@
       "status": "published",
       "sourcePath": "apps/graphim-demo",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/graphim-demo/",
+        "demo": "https://cursor-workspace-mu.vercel.app/graphim-demo/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/graphim-demo",
         "docs": null
       },
@@ -257,7 +257,7 @@
       "status": "published",
       "sourcePath": "apps/gen-ui",
       "links": {
-        "demo": "https://fogrexon.github.io/cursor-workspace/gen-ui/",
+        "demo": "https://cursor-workspace-mu.vercel.app/gen-ui/",
         "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/gen-ui",
         "docs": null
       },

@@ -163,13 +163,19 @@ function resolveItem(
   return item;
 }
 
-export async function buildCatalogFromRepo(repoRoot: string): Promise<{
+export async function buildCatalogFromRepo(
+  repoRoot: string,
+  options: { pagesBaseUrl?: string } = {},
+): Promise<{
   catalog: CatalogDocument;
   workspace: WorkspaceConfig;
   outputPath: string;
 }> {
   const workspacePath = path.join(repoRoot, "catalog", "workspace.yaml");
   const workspace = await loadWorkspace(workspacePath);
+  if (options.pagesBaseUrl) {
+    workspace.pages.baseUrl = ensureTrailingSlash(options.pagesBaseUrl);
+  }
   const entriesDir = path.join(repoRoot, workspace.paths.entries);
   const entries = await loadEntries(entriesDir);
   const catalog = buildCatalog(workspace, entries);

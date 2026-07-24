@@ -1,0 +1,8 @@
+{
+  "name": "cursor-workspace",
+  "private": true,
+  "description": "Orchestrates multi-app static builds for Vercel (output: docs/)",
+  "scripts": {
+    "build": "node tools/build-all.mjs"
+  }
+}

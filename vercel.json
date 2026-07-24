@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "if [ -d .git ]; then git submodule update --init --recursive; fi",
+  "buildCommand": "npm run build",
+  "outputDirectory": "docs",
+  "rewrites": [
+    {
+      "source": "/cursor-workspace/:path*",
+      "destination": "/:path*"
+    }
+  ]
+}

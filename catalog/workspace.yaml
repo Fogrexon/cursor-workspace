@@ -12,7 +12,7 @@ paths:
   entries: catalog/entries
 
 pages:
-  baseUrl: https://fogrexon.github.io/cursor-workspace/
+  baseUrl: https://cursor-workspace-mu.vercel.app/
   apiPath: api/catalog.json
 
 source:

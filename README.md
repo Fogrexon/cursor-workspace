@@ -1,15 +1,15 @@
 # Cursor Playground
 
-Cursor で実装するアプリの実験場。各アプリを `apps/` 配下に実装し、ビルド成果物を `docs/` に出力して GitHub Pages で公開する。
+Cursor で実装するアプリの実験場。各アプリを `apps/` 配下に実装し、ビルド成果物を `docs/` に出力して Vercel で公開する。
 
-公開 URL: `https://fogrexon.github.io/cursor-workspace/`(ポータルページから各アプリへ遷移)
+公開 URL: `https://cursor-workspace-mu.vercel.app/`（ポータルページから各アプリへ遷移）
 
 ## 構成
 
 ```
 apps/<app-name>/   # 各アプリのソース(Vite プロジェクト)
 lib/<lib-name>/    # 再利用可能なローカルライブラリ(file: 参照で利用)
-docs/              # GitHub Pages の公開ルート
+docs/              # 静的公開ルート（Vercel が配信）
   index.html       # ポータルページ(手書き管理)
   <app-name>/      # 各アプリのビルド出力(コミットする)
 blender/           # Blender MCP 用アセット
@@ -20,12 +20,11 @@ blender/           # Blender MCP 用アセット
   skills/          # エージェント向けスキル(アプリ作成手順・UIスタイルガイド)
 ```
 
-## GitHub Pages の設定
+## 公開（Vercel）
 
-リポジトリの Settings → Pages で以下を設定する。
+本番ドメイン: **https://cursor-workspace-mu.vercel.app/**
 
-- Source: **Deploy from a branch**
-- Branch: **main** / フォルダ: **/docs**
+`vercel.json` で `docs/` を Output Directory にし、`/cursor-workspace/*` → `/*` に rewrite（Vite `base` は Pages 互換のまま）。ルートの `npm run build`（`tools/build-all.mjs`）が全 published アプリと catalog を生成する。公開 URL のソース・オブ・トゥルースは `catalog/workspace.yaml` の `pages.baseUrl`。
 
 ## アプリの追加方法
 

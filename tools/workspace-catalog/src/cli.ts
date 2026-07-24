@@ -5,22 +5,31 @@ import { buildCatalogFromRepo } from "./build.ts";
 import { catalogFingerprint } from "./fingerprint.ts";
 import type { CatalogDocument } from "./types.ts";
 
-function parseArgs(argv: string[]): { repoRoot: string; check: boolean } {
+function parseArgs(argv: string[]): {
+  repoRoot: string;
+  check: boolean;
+  pagesBaseUrl?: string;
+} {
   let repoRoot = process.cwd();
   let check = false;
+  let pagesBaseUrl: string | undefined;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--root" && argv[i + 1]) {
       repoRoot = path.resolve(argv[++i]!);
     } else if (argv[i] === "--check") {
       check = true;
+    } else if (argv[i] === "--pages-base-url" && argv[i + 1]) {
+      pagesBaseUrl = argv[++i]!;
     }
   }
-  return { repoRoot, check };
+  return { repoRoot, check, pagesBaseUrl };
 }
 
 async function main(): Promise<void> {
-  const { repoRoot, check } = parseArgs(process.argv.slice(2));
-  const { catalog, outputPath } = await buildCatalogFromRepo(repoRoot);
+  const { repoRoot, check, pagesBaseUrl } = parseArgs(process.argv.slice(2));
+  const { catalog, outputPath } = await buildCatalogFromRepo(repoRoot, {
+    pagesBaseUrl,
+  });
 
   if (check) {
     let existingRaw: string;

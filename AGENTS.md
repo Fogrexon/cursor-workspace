@@ -10,9 +10,10 @@ See `.cursor/rules/` and `.cursor/skills/` for project conventions.
 
 ## Cursor Cloud
 
-- No root `package.json`. Each `apps/<name>/` and `lib/<name>/` is its own npm project — `cd` there before commands.
+- Root `package.json` is Vercel-only (`npm run build` → `tools/build-all.mjs`). Each `apps/<name>/` and `lib/<name>/` remains its own npm project — `cd` there for day-to-day commands.
 - `lib/theme` is CSS-only (`file:../../lib/theme`). After theme changes, re-run `npm install` in consuming apps.
 - `lib/graphim` is a **git submodule** ([Fogrexon/Graphim](https://github.com/Fogrexon/Graphim)). After clone: `git submodule update --init --recursive`. Vite apps need `graphimGlsl()` from `graphim/vite`.
+- Vercel: `vercel.json` publishes `docs/` and rewrites `/cursor-workspace/*` → `/*` (Vite `base` stays Pages-compatible).
 
 ### Commands (per app dir)
 

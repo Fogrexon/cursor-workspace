@@ -4,10 +4,10 @@
 
 | ファイル | 役割 |
 |----------|------|
-| `workspace.yaml` | パス規約・Pages URL・GitHub リンクテンプレート |
+| `workspace.yaml` | パス規約・公開 URL・GitHub リンクテンプレート |
 | `entries/apps/*.yaml` | 各アプリ |
 | `entries/libs/*.yaml` | 各ライブラリ |
-| → `docs/api/catalog.json` | 生成される静的 API（GitHub Pages で配信） |
+| → `docs/api/catalog.json` | 生成される静的 API（Vercel で配信） |
 
 仕様とビルダー: [`tools/workspace-catalog/`](../tools/workspace-catalog/)。
 
@@ -23,4 +23,4 @@ npm run check -- --root ../..   # CI と同じ同期チェック
 GitHub Actions:
 
 - **Catalog** — PR / push で test + 同期チェック（`.github/workflows/catalog.yml`）
-- **Deploy GitHub Pages** — `main` デプロイ時に YAML から `catalog.json` を再生成して公開
+- **Deploy** — `main` デプロイ時に YAML から `catalog.json` を再生成して Vercel で公開

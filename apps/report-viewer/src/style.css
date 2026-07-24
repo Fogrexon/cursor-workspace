@@ -6,6 +6,7 @@
     max(var(--space-3), env(safe-area-inset-right))
     max(var(--space-6), env(safe-area-inset-bottom))
     max(var(--space-3), env(safe-area-inset-left));
+  overflow-x: clip;
 }
 
 @media (min-width: 720px) {
@@ -210,6 +211,26 @@
   display: grid;
   gap: var(--space-4);
   align-items: start;
+  min-width: 0;
+}
+
+.report__main {
+  min-width: 0;
+}
+
+/* 詳細表示時はモバイルでブランドヘッダを圧縮 */
+.app-shell:has(.report) .top__titles p {
+  display: none;
+}
+
+.app-shell:has(.report) .top__titles h1 {
+  font-size: clamp(1.25rem, 5vw, 1.75rem);
+}
+
+@media (min-width: 720px) {
+  .app-shell:has(.report) .top__titles p {
+    display: block;
+  }
 }
 
 .toc {
@@ -218,6 +239,7 @@
   border-radius: var(--radius);
   background: rgb(18 24 32 / 0.92);
   overflow: hidden;
+  min-width: 0;
 }
 
 .toc__summary {
@@ -351,6 +373,8 @@
   border-radius: var(--radius);
   background: rgb(18 24 32 / 0.92);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
 }
 
 @media (min-width: 720px) {
@@ -370,6 +394,7 @@
   scroll-margin-top: var(--space-4);
   line-height: 1.3;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
 }
 
 .markdown-body h1 {
@@ -403,6 +428,25 @@
   border-collapse: collapse;
   margin: var(--space-3) 0;
   font-size: var(--text-sm);
+}
+
+@media (max-width: 899px) {
+  .report {
+    grid-template-columns: 1fr;
+  }
+
+  .toc {
+    position: static;
+    max-height: none;
+  }
+
+  .toc__summary {
+    pointer-events: auto;
+  }
+
+  .toc__summary::after {
+    display: block;
+  }
 }
 
 .markdown-body th,

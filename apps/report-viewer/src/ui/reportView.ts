@@ -13,16 +13,21 @@ export function renderReportView(doc: ReportDoc): string {
   const date = doc.date
     ? `<time datetime="${escapeHtml(doc.date)}">${escapeHtml(doc.date)}</time>`
     : '';
+  const tocOpen =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(min-width: 900px)').matches;
 
   return `
     <article class="report">
-      <aside class="toc" aria-label="目次">
-        <a class="back-inline" href="${back}">← 一覧へ</a>
-        <p class="toc__label">目次</p>
-        <nav class="toc__nav">
-          ${renderToc(toc)}
-        </nav>
-      </aside>
+      <details class="toc" aria-label="目次"${tocOpen ? ' open' : ''}>
+        <summary class="toc__summary">目次</summary>
+        <div class="toc__panel">
+          <a class="toc__back" href="${back}">← 一覧へ</a>
+          <nav class="toc__nav">
+            ${renderToc(toc)}
+          </nav>
+        </div>
+      </details>
       <div class="report__main">
         <header class="report__header">
           <div class="report-card__meta">

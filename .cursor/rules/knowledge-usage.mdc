@@ -19,3 +19,4 @@ Non-code intent lives in `knowledge/` (not in `docs/` builds).
 - Treat code comments or git history as the only source of product intent
 - Close an incident fix without Prevention (test, rule, or skill)
 - Put long narratives into alwaysApply rules — link to `knowledge/` instead
+- Store deep research / survey reports in `knowledge/` — use repo-root `research/` instead

@@ -12,6 +12,11 @@
 
 運用手順は `.cursor/skills/knowledge-capture/SKILL.md`。読むきっかけは `.cursor/rules/knowledge-usage.mdc`。
 
+## 置かないもの
+
+- **調査レポート（deep research）** → リポジトリ直下の `research/`（閲覧は `apps/report-viewer`）
+- 実装手順・コーディング how-to → `.cursor/skills/` / `.cursor/rules/`
+
 ## 昇格ルール
 
 1. 確定前・断片 → `inbox/`

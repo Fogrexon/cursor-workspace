@@ -2,6 +2,8 @@
 
 export type EntryKind = "app" | "lib";
 export type EntryStatus = "published" | "draft" | "local" | "archived";
+/** Portal frame for apps. libs ignore this for home layout. */
+export type PortalSection = "playground" | "research";
 
 export interface WorkspaceConfig {
   id: string;
@@ -51,6 +53,7 @@ export interface EntryConfig {
   related?: string[];
   order?: number;
   portal?: boolean;
+  portalSection?: PortalSection;
 }
 
 export interface CatalogItem {
@@ -71,6 +74,7 @@ export interface CatalogItem {
   related: string[];
   order: number;
   portal: boolean;
+  portalSection: PortalSection;
 }
 
 export interface CatalogDocument {

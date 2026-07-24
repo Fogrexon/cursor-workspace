@@ -56,7 +56,8 @@
           "links",
           "related",
           "order",
-          "portal"
+          "portal",
+          "portalSection"
         ],
         "properties": {
           "id": { "type": "string" },
@@ -83,7 +84,12 @@
           },
           "related": { "type": "array", "items": { "type": "string" } },
           "order": { "type": "integer" },
-          "portal": { "type": "boolean" }
+          "portal": { "type": "boolean" },
+          "portalSection": {
+            "type": "string",
+            "enum": ["playground", "research"],
+            "description": "Portal frame. playground = Apps; research = Research (tooling, not demos)."
+          }
         }
       }
     }

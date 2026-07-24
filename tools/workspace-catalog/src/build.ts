@@ -155,6 +155,7 @@ function resolveItem(
     related: entry.related ?? [],
     order: entry.order ?? 100,
     portal,
+    portalSection: entry.portalSection ?? "playground",
   };
 
   if (entry.description !== undefined) item.description = entry.description;

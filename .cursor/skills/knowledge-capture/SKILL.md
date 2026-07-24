@@ -26,6 +26,8 @@ Layout: see [knowledge/README.md](../../../knowledge/README.md). Templates: [ref
 
 Do **not** dump implementation how-tos here — those belong in skills/rules.
 
+Do **not** put deep research / survey reports here — those belong in repo-root `research/` (see deep-research-report-ja skill). `knowledge/` is for this repository's product intent and incident memory only.
+
 ## Capture workflow (requirements)
 
 1. Separate **Fact** (user said) from **Interpretation** (your inference). Mark Open questions.

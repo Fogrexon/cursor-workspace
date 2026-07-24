@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-24T00:32:11.728Z",
+  "generatedAt": "2026-07-24T02:49:01.368Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -36,7 +36,32 @@
       },
       "related": [],
       "order": 10,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
+    },
+    {
+      "id": "report-viewer",
+      "kind": "app",
+      "title": "Research Report Viewer",
+      "summary": "research/ の調査レポートを Markdown で閲覧します（knowledge は対象外）。",
+      "tags": [
+        "docs",
+        "markdown",
+        "research"
+      ],
+      "status": "published",
+      "sourcePath": "apps/report-viewer",
+      "links": {
+        "demo": "https://cursor-workspace-mu.vercel.app/report-viewer/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/report-viewer",
+        "docs": null
+      },
+      "related": [
+        "theme"
+      ],
+      "order": 10,
+      "portal": true,
+      "portalSection": "research"
     },
     {
       "id": "city-chill",
@@ -59,30 +84,8 @@
         "theme"
       ],
       "order": 20,
-      "portal": true
-    },
-    {
-      "id": "report-viewer",
-      "kind": "app",
-      "title": "Knowledge Report Viewer",
-      "summary": "knowledge/ の調査レポート・意思決定・インシデントを Markdown で閲覧します。",
-      "tags": [
-        "docs",
-        "markdown",
-        "research"
-      ],
-      "status": "published",
-      "sourcePath": "apps/report-viewer",
-      "links": {
-        "demo": "https://cursor-workspace-mu.vercel.app/report-viewer/",
-        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/report-viewer",
-        "docs": null
-      },
-      "related": [
-        "theme"
-      ],
-      "order": 20,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "box2d-car-game",
@@ -103,7 +106,8 @@
       },
       "related": [],
       "order": 30,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "bubble-demo",
@@ -126,7 +130,8 @@
         "bubble-engine"
       ],
       "order": 40,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "temperature-converter",
@@ -147,7 +152,8 @@
         "theme"
       ],
       "order": 50,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "openworld-flight",
@@ -170,7 +176,8 @@
         "theme"
       ],
       "order": 60,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "canvas-style-ui",
@@ -193,7 +200,8 @@
         "canvas-style"
       ],
       "order": 70,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "graphim-editor",
@@ -218,7 +226,8 @@
         "graphim-demo"
       ],
       "order": 74,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "graphim-demo",
@@ -242,7 +251,8 @@
         "graphim"
       ],
       "order": 75,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "gen-ui",
@@ -265,7 +275,8 @@
         "gen-ui-lib"
       ],
       "order": 76,
-      "portal": true
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "theme",
@@ -286,6 +297,7 @@
       "related": [],
       "order": 100,
       "portal": false,
+      "portalSection": "playground",
       "package": "@playground/theme"
     },
     {
@@ -310,6 +322,7 @@
       ],
       "order": 110,
       "portal": false,
+      "portalSection": "playground",
       "package": "@playground/bubble-engine"
     },
     {
@@ -334,6 +347,7 @@
       ],
       "order": 115,
       "portal": false,
+      "portalSection": "playground",
       "package": "graphim"
     },
     {
@@ -358,6 +372,7 @@
       ],
       "order": 120,
       "portal": false,
+      "portalSection": "playground",
       "package": "@playground/canvas-style"
     },
     {
@@ -381,6 +396,7 @@
       ],
       "order": 130,
       "portal": false,
+      "portalSection": "playground",
       "package": "@playground/gen-ui"
     }
   ]

@@ -1,4 +1,4 @@
-import { type Scene, type SceneContext } from '@playground/bubble-engine';
+import { type Scene, type SceneContext } from '@fogrexon/bubble-engine';
 import { hudDef, pauseHintDef } from '../ui/screens';
 import { GameState } from '../game/types';
 

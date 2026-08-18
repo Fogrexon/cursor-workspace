@@ -1,3 +1,9 @@
 [submodule "lib/graphim"]
 	path = lib/graphim
 	url = https://github.com/Fogrexon/Graphim.git
+[submodule "lib/bubble-ui"]
+	path = lib/bubble-ui
+	url = https://github.com/Fogrexon/bubble-ui.git
+[submodule "lib/bubble-engine"]
+	path = lib/bubble-engine
+	url = https://github.com/Fogrexon/bubble-engine.git

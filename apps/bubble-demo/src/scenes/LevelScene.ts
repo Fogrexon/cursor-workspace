@@ -11,7 +11,7 @@ import {
   type Scene,
   type SceneContext,
   type Vec2,
-} from '@playground/bubble-engine';
+} from '@fogrexon/bubble-engine';
 import {
   BIRDS_PER_LEVEL,
   BIRD_RADIUS,

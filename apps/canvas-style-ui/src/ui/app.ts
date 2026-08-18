@@ -5,7 +5,7 @@ import {
   node,
   token,
   type CanvasUi,
-} from '@playground/canvas-style';
+} from '@fogrexon/bubble-ui';
 import { GAME_HUD_CODE } from './gameHud';
 
 function el<K extends keyof HTMLElementTagNameMap>(

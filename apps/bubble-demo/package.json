@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@playground/bubble-engine": "file:../../lib/bubble-engine",
+    "@fogrexon/bubble-engine": "file:../../lib/bubble-engine",
     "@playground/theme": "file:../../lib/theme"
   },
   "devDependencies": {

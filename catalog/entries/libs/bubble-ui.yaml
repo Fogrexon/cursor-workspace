@@ -1,12 +1,13 @@
 # yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
 
-id: canvas-style
+id: bubble-ui
 kind: lib
-title: Canvas Style
-summary: CSS-like styles + programmatic tree for Canvas UI (game HUDs, panels)。
-package: "@playground/canvas-style"
+title: bubble-ui
+summary: Canvas HUD 向けの宣言的 UI（git submodule → Fogrexon/bubble-ui）。
+package: "@fogrexon/bubble-ui"
 tags: [canvas, ui, stylesheet]
 status: published
 order: 120
 portal: false
 related: [canvas-style-ui]
+sourcePath: lib/bubble-ui

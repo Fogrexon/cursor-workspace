@@ -1,4 +1,4 @@
-import type { SceneNavigateRequest } from '@playground/bubble-engine';
+import type { SceneNavigateRequest } from '@fogrexon/bubble-engine';
 
 export const ROUTE_MENU: SceneNavigateRequest[] = [
   { op: 'unload', sceneId: 'level' },

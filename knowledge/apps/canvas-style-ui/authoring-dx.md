@@ -1,7 +1,7 @@
 # Canvas UI — Authoring DX（合意用ドラフト）
 
 - Status: accepted（書き味の方針は合意済み。実装はこれに合わせる）
-- Package: `@playground/canvas-style`
+- Package: `@fogrexon/bubble-ui`
 - Audience: Canvas 上にゲーム HUD / パネルを置くアプリ開発者
 
 ## 一文の体験
@@ -23,7 +23,7 @@ import {
   token,
   darkTheme,
   lightTheme,
-} from '@playground/canvas-style';
+} from '@fogrexon/bubble-ui';
 
 const ui = createCanvasUi(canvas);
 

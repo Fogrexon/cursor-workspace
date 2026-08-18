@@ -1,5 +1,5 @@
 import './style.css';
-import { BubbleEngine } from '@playground/bubble-engine';
+import { BubbleEngine } from '@fogrexon/bubble-engine';
 import { GameState } from './game/types';
 import { createDemoSceneRegistry } from './game/sceneRegistry';
 import { ROUTE_MENU } from './game/routes';

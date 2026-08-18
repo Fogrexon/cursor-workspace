@@ -1,6 +1,6 @@
 # canvas-style-ui
 
-Playground demo for `@playground/canvas-style`: declarative HUD views with global state, Recipe-based shared styles, and theme tokens.
+Playground demo for `@fogrexon/bubble-ui`: declarative HUD views with global state, Recipe-based shared styles, and theme tokens.
 
 Intent: [`knowledge/apps/canvas-style-ui/`](../../knowledge/apps/canvas-style-ui/).
 

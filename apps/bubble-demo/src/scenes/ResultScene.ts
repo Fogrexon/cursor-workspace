@@ -1,4 +1,4 @@
-import type { Scene, SceneContext } from '@playground/bubble-engine';
+import type { Scene, SceneContext } from '@fogrexon/bubble-engine';
 import { resultDef } from '../ui/screens';
 import { GameState } from '../game/types';
 import { ROUTE_LEVEL, ROUTE_MENU } from '../game/routes';

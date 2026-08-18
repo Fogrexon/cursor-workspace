@@ -8,7 +8,7 @@
 - Style は layout / paint / text を一つのオブジェクトに統一する。
 - スタイル共通化は **Recipe（定数 + spread）** と **Theme `token()`**（CSS セレクタではない）。
 - Theme はセマンティック・トークン表。Motion は `transition` + ランタイム補間。
-- `@playground/canvas-style` として他アプリから使える。
+- `@fogrexon/bubble-ui` として他アプリから使える。
 - `createCanvasUi` 経路だけで、旧 stylesheet モードが担っていた用途（テーマ・見た目再利用・状態連動）をカバーする。
 ## Non-goals
 - Web CSS / DOM / セレクタ / カスケードの第一級互換。

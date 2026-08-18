@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { darkTheme, mountTree, node, token } from '@playground/canvas-style';
+import { darkTheme, mountTree, node, token } from '@fogrexon/bubble-ui';
 
 describe('demo uses library API', () => {
   it('mounts a token-styled HUD tree', () => {

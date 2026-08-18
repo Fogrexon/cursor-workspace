@@ -1,4 +1,4 @@
-import type { Vec2 } from '@playground/bubble-engine';
+import type { Vec2 } from '@fogrexon/bubble-engine';
 
 /** スリングの最大引き距離 (m) */
 export const MAX_PULL = 2.8;

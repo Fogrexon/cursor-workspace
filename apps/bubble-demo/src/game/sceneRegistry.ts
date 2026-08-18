@@ -1,4 +1,4 @@
-import { SceneRegistry } from '@playground/bubble-engine';
+import { SceneRegistry } from '@fogrexon/bubble-engine';
 import { MenuScene } from '../scenes/MenuScene';
 import { HudScene } from '../scenes/HudScene';
 import { LevelScene } from '../scenes/LevelScene';

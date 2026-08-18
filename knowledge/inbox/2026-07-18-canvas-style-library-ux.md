@@ -10,7 +10,7 @@
 ## Interpretation
 - string DSL 単体はライブ編集・テーマ試作には向くが、ゲーム HUD（HP 更新、クリック、部分変更）には向かない。
 - 正しい形は「見た目 = stylesheet」「構造・状態・イベント = TS ツリー / patch API」の二層。
-- コアは `lib/canvas-style`（`@playground/canvas-style`）に抽出し、デモアプリは消費者にする。
+- コアは `lib/canvas-style`（`@fogrexon/bubble-ui`）に抽出し、デモアプリは消費者にする。
 ## Open
 - bubble-engine の UI 系との統合は今回の範囲外（将来）。
 ## Not code

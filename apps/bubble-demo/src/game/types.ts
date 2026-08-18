@@ -3,7 +3,7 @@ import {
   defineComponent,
   type Entity,
   type Vec2,
-} from '@playground/bubble-engine';
+} from '@fogrexon/bubble-engine';
 
 export const GameState = defineResource<{
   score: number;

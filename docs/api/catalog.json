@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-24T02:49:01.368Z",
+  "generatedAt": "2026-08-18T14:57:22.623Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -183,7 +183,7 @@
       "id": "canvas-style-ui",
       "kind": "app",
       "title": "Canvas Style UI",
-      "summary": "@playground/canvas-style — stylesheet + node() ツリーで Canvas 上のゲーム HUD を組む。",
+      "summary": "@fogrexon/bubble-ui — view と theme token で Canvas 上のゲーム HUD を組む。",
       "tags": [
         "demo",
         "canvas",
@@ -197,7 +197,7 @@
         "docs": null
       },
       "related": [
-        "canvas-style"
+        "bubble-ui"
       ],
       "order": 70,
       "portal": true,
@@ -303,8 +303,8 @@
     {
       "id": "bubble-engine",
       "kind": "lib",
-      "title": "Bubble Engine",
-      "summary": "2D ECS ゲームエンジン（planck + Pixi.js）。",
+      "title": "bubble-engine",
+      "summary": "2D ECS ゲームエンジン（git submodule → Fogrexon/bubble-engine）。",
       "tags": [
         "ecs",
         "physics",
@@ -323,7 +323,7 @@
       "order": 110,
       "portal": false,
       "portalSection": "playground",
-      "package": "@playground/bubble-engine"
+      "package": "@fogrexon/bubble-engine"
     },
     {
       "id": "graphim",
@@ -351,20 +351,20 @@
       "package": "graphim"
     },
     {
-      "id": "canvas-style",
+      "id": "bubble-ui",
       "kind": "lib",
-      "title": "Canvas Style",
-      "summary": "CSS-like styles + programmatic tree for Canvas UI (game HUDs, panels)。",
+      "title": "bubble-ui",
+      "summary": "Canvas HUD 向けの宣言的 UI（git submodule → Fogrexon/bubble-ui）。",
       "tags": [
         "canvas",
         "ui",
         "stylesheet"
       ],
       "status": "published",
-      "sourcePath": "lib/canvas-style",
+      "sourcePath": "lib/bubble-ui",
       "links": {
         "demo": null,
-        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/canvas-style",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/lib/bubble-ui",
         "docs": null
       },
       "related": [
@@ -373,7 +373,7 @@
       "order": 120,
       "portal": false,
       "portalSection": "playground",
-      "package": "@playground/canvas-style"
+      "package": "@fogrexon/bubble-ui"
     },
     {
       "id": "gen-ui-lib",

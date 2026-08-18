@@ -1,4 +1,4 @@
-import type { Entity, PointerInput, SceneContext, World } from '@playground/bubble-engine';
+import type { Entity, PointerInput, SceneContext, World } from '@fogrexon/bubble-engine';
 import {
   CameraState,
   ContactBegin,
@@ -10,7 +10,7 @@ import {
   Viewport,
   defineSystem,
   isOutsideView,
-} from '@playground/bubble-engine';
+} from '@fogrexon/bubble-engine';
 import { addDestroyScore, bestScore, evaluateOutcome } from '../logic/score';
 import { clampPullPoint, computeLaunchVelocity, contactDamage } from '../logic/slingshot';
 import { tickTurnState } from '../logic/turnFlow';

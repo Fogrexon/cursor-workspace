@@ -5,7 +5,7 @@ export const GAME_HUD_CODE = `import {
   token,
   darkTheme,
   lightTheme,
-} from '@playground/canvas-style';
+} from '@fogrexon/bubble-ui';
 
 const ui = createCanvasUi(canvas);
 

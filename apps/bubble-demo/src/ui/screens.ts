@@ -1,4 +1,4 @@
-import { defineUi } from '@playground/bubble-engine';
+import { defineUi } from '@fogrexon/bubble-engine';
 
 const accent = { r: 0.42, g: 0.49, b: 1, a: 1 };
 const muted = { r: 0.65, g: 0.67, b: 0.78, a: 1 };

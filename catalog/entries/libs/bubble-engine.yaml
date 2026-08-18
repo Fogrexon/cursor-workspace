@@ -2,11 +2,12 @@
 
 id: bubble-engine
 kind: lib
-title: Bubble Engine
-summary: 2D ECS ゲームエンジン（planck + Pixi.js）。
-package: "@playground/bubble-engine"
+title: bubble-engine
+summary: 2D ECS ゲームエンジン（git submodule → Fogrexon/bubble-engine）。
+package: "@fogrexon/bubble-engine"
 tags: [ecs, physics, pixi]
 status: published
 order: 110
 portal: false
 related: [bubble-demo]
+sourcePath: lib/bubble-engine

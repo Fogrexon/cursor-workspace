@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@playground/canvas-style": "file:../../lib/canvas-style",
+    "@fogrexon/bubble-ui": "file:../../lib/bubble-ui",
     "@playground/theme": "file:../../lib/theme"
   },
   "devDependencies": {

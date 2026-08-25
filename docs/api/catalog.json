@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-18T14:57:22.623Z",
+  "generatedAt": "2026-08-25T15:53:04.744Z",
   "workspace": {
     "id": "cursor-workspace",
     "title": "Cursor Playground",
@@ -62,6 +62,30 @@
       "order": 10,
       "portal": true,
       "portalSection": "research"
+    },
+    {
+      "id": "cedec-capture",
+      "kind": "app",
+      "title": "CEDEC Capture",
+      "summary": "CEDEC 2026 の公開セッションを取り込み、playground 向けに絞り込んで読む。",
+      "tags": [
+        "cedec",
+        "graphics",
+        "research"
+      ],
+      "status": "published",
+      "sourcePath": "apps/cedec-capture",
+      "links": {
+        "demo": "https://cursor-workspace-mu.vercel.app/cedec-capture/",
+        "source": "https://github.com/Fogrexon/cursor-workspace/tree/main/apps/cedec-capture",
+        "docs": null
+      },
+      "related": [
+        "theme"
+      ],
+      "order": 15,
+      "portal": true,
+      "portalSection": "playground"
     },
     {
       "id": "city-chill",

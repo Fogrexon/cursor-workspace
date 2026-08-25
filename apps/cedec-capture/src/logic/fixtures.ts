@@ -1,0 +1,46 @@
+import type { Session } from '../types';
+
+export const sampleSession: Session = {
+  id: 33,
+  uuid: 's69774c1c622ae',
+  parentUuid: null,
+  title: 'グラフィックスエンジニアのためのニューラルシェーディング入門',
+  day: '2026-07-24',
+  start: '11:10',
+  end: '12:10',
+  room: '第5会場',
+  field: 'ENG',
+  fieldLabel: 'エンジニアリング',
+  extraFields: [],
+  format: 'レギュラーセッション',
+  type: '公募',
+  difficulty: 1,
+  difficultyLabel: 'この分野の初心者へ',
+  keywords: ['モデル学習', 'レンダリング'],
+  abstract:
+    'ランタイムシェーダ上でニューラルネットワークによる推論を行う具体的なコードを解説する。',
+  takeaway: 'Slang、SlangPy、D3D12 Cooperative Vector の概要',
+  expectedSkill: 'シェーダおよびリアルタイムレンダラーの基礎的な開発経験',
+  speakers: [{ name: '林 秀一', company: '株式会社Cygames', job: 'サブマネージャー' }],
+  officialUrl: 'https://cedec.cesa.or.jp/2026/timetable/detail/s69774c1c622ae/',
+  cedilUrl: 'https://cedil.cesa.or.jp/',
+  photoAllowed: true,
+  snsAllowed: true,
+  materialsAllowed: true,
+};
+
+export const businessSession: Session = {
+  ...sampleSession,
+  id: 99,
+  uuid: 's-business',
+  title: 'スポンサーセッション：採用と組織づくり',
+  day: '2026-07-22',
+  start: '13:40',
+  field: 'BP',
+  fieldLabel: 'ビジネス＆プロデュース',
+  keywords: ['GaaS'],
+  abstract: '採用イベントの運営について',
+  takeaway: '',
+  expectedSkill: '',
+  speakers: [{ name: '山田', company: 'Example', job: '' }],
+};

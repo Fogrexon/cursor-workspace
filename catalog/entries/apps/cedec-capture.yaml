@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../tools/workspace-catalog/schema/entry.schema.json
+
+id: cedec-capture
+kind: app
+title: CEDEC Capture
+summary: CEDEC 2026 の公開セッションを取り込み、playground 向けに絞り込んで読む。
+tags: [cedec, graphics, research]
+status: published
+order: 15
+related: [theme]
